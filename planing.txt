@@ -1,0 +1,37 @@
+The font is **Lexend**. Your config sets it for both headings and body, and the Realtime Colors URL says `fonts=Lexend-Lexend` (heading-body).
+
+**Fonts**
+| Role | Font | Weight |
+|---|---|---|
+| Heading | Lexend | 700 (bold) |
+| Body | Lexend | 400 (normal) |
+
+**Font sizes** (a 1.333 ratio scale, so each step is 1.333× the last)
+| Name | rem | ≈ px | Tailwind class |
+|---|---|---|---|
+| sm | 0.750rem | 12px | `text-sm` |
+| base | 1rem | 16px | `text-base` |
+| xl | 1.333rem | 21px | `text-xl` |
+| 2xl | 1.777rem | 28px | `text-2xl` |
+| 3xl | 2.369rem | 38px | `text-3xl` |
+| 4xl | 3.158rem | 51px | `text-4xl` |
+| 5xl | 4.210rem | 67px | `text-5xl` |
+
+**Colors** (decoded from the URL: `050315-ffffff-0a0a0a-f5f5f5-737373`)
+| Role | Hex |
+|---|---|
+| Text | `#050315` |
+| Background | `#ffffff` |
+| Primary | `#0a0a0a` |
+| Secondary | `#f5f5f5` |
+| Accent | `#737373` |
+
+Two things to watch:
+
+1. **Load the font.** Lexend won't render unless you import it, and you only need the two weights you use:
+   ```html
+   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap" rel="stylesheet">
+   ```
+2. **Put the config under `theme.extend`.** If `fontSize` sits directly under `theme`, it replaces Tailwind's defaults, so `text-lg`, `text-xs` and `text-6xl` stop existing. Under `extend`, yours get added instead. (If you're on Tailwind v4, this goes in CSS with `@theme` rather than `tailwind.config.js`.)
+
+Insight: this palette is light-mode, but your accent `#737373` is just a gray. That's fine for a minimal look, but buttons won't stand out much. Do you want to swap it for the blue or emerald we picked earlier?
