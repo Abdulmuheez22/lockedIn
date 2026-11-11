@@ -3,27 +3,11 @@ import { integer, pgTable, varchar } from "drizzle-orm/pg-core";
 
 export const usersTable = pgTable("users", {
   id: uuid().primaryKey().defaultRandom(),
-  name: varchar({ length: 555 }).notNull(),
+  fullName: varchar({ length: 555 }).notNull(),
   email: varchar({ length: 255 }).notNull().unique(),
+  password: varchar({ length: 255 }).notNull(),
+  level: varchar({ length: 255 }).notNull(),
+  department: varchar( {length: 255 }).notNull(),
+  phoneNumber: varchar({ length: 255 }).notNull()
 });
 
-
-
-
-
-// Full Name
-// John Doe
-// Email Address
-// you@example.com
-// Password
-// ••••••••
-
-// Confirm Password
-// ••••••••
-
-// Current Academic Level
-
-// Select your level
-// Department
-// e.g. History & International Studies
-// Phone Number(WhatsApp preferred)
