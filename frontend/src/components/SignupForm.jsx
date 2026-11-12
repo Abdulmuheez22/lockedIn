@@ -200,7 +200,14 @@ export default function SignupForm() {
     if (!validate()) return;
     setIsSubmitting(true);
     setTimeout(() => {
-      mutate({formData})
+          mutate({
+      fullName: formData.fullName,
+      email: formData.email,
+      password: formData.password,
+      level: formData.level,
+      department: formData.department,
+      phoneNumber: formData.phone,
+    });
       console.log("Form submitted:", formData);
       setIsSubmitting(false);
       setSubmitted(true);

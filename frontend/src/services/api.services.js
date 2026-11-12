@@ -4,7 +4,7 @@ import api from "../lib/axios";
 
 
 
-export const signUp = async () => {
-  const res = await api.post("/auth/signUp");
-  return res.data
+export const signUp = async (data) => {
+  const res = await api.post("/auth/signUp", data);
+  return res.data;
 };
