@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
 import { signUp } from "../services/api.services";
+import { Link, useLocation } from "react-router";
 
 const levels = [
   "100 Level",
@@ -138,6 +139,7 @@ const EyeIcon = ({ off }) =>
   );
 
 export default function SignupForm() {
+  const location = useLocation();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -147,6 +149,21 @@ export default function SignupForm() {
     department: "",
     phone: "",
   });
+
+  useEffect(() => {
+    const savedData = location.state?.accountData;
+    if (!savedData) return;
+
+    setFormData({
+      fullName: savedData.fullName ?? "",
+      email: savedData.email ?? "",
+      password: savedData.password ?? "",
+      confirmPassword: savedData.confirmPassword ?? savedData.password ?? "",
+      level: savedData.level ?? "",
+      department: savedData.department ?? "",
+      phone: savedData.phone ?? "",
+    });
+  }, [location.state]);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -188,7 +205,8 @@ export default function SignupForm() {
     mutationFn: signUp,
     onSuccess: (data) => {
       console.log("Success:", data);
-      // redirect, show toast, etc.
+       setIsSubmitting(false);
+      setSubmitted(true);
     },
     onError: (error) => {
       console.log("Error:", error.message);
@@ -209,8 +227,6 @@ export default function SignupForm() {
       phoneNumber: formData.phone,
     });
       console.log("Form submitted:", formData);
-      setIsSubmitting(false);
-      setSubmitted(true);
     }, 1500);
   };
 
@@ -294,28 +310,18 @@ export default function SignupForm() {
                   </svg>
                 </motion.div>
                 <h2 className="text-2xl font-bold text-[#0a0a0a] tracking-tight">
-                  You're in the circle
+                  Welcome to the circle
                 </h2>
-                <p className="text-[#737373] text-sm mt-2">
-                  Your account has been created successfully.
+                <p className="text-[#737373] text-md mt-2">
+                  Your account has been created successfully, we've sent an otp to your email for verification.
                 </p>
-                <button
-                  onClick={() => {
-                    setSubmitted(false);
-                    setFormData({
-                      fullName: "",
-                      email: "",
-                      password: "",
-                      confirmPassword: "",
-                      level: "",
-                      department: "",
-                      phone: "",
-                    });
-                  }}
+                <Link
+                  to="/OtpVerification"
+                  state={{ accountData: formData }}
                   className="mt-6 text-sm font-semibold text-[#0a0a0a] underline underline-offset-4 hover:text-[#737373] transition-colors"
                 >
-                  Create another account
-                </button>
+                  Verify your email
+                </Link>
               </motion.div>
             ) : (
               <motion.form

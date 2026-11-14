@@ -1,11 +1,10 @@
-import React from 'react'
-import SignupForm from './components/SignupForm'
+import { Outlet } from "react-router";
 
-
-const App = () => {
+export default function App() {
   return (
-    <SignupForm />
-  )
+    <>
+      {/* <Navbar /> */}
+      <Outlet />  
+    </>
+  );
 }
-
-export default App

@@ -17,6 +17,7 @@ const password = z.string().min(6).max(255);
 const level = z.enum(levels);
 const department = z.string().trim().min(1).max(255);
 const phoneNumber = z.string().trim().min(1).max(255);
+const otp = z.string().trim().max(6)
 
 
 export const signUpSchema = z.object({
@@ -26,4 +27,9 @@ export const signUpSchema = z.object({
     level,
     department,
     phoneNumber
+})
+
+export const otpSchema = z.object({
+  email, 
+  otp
 })
