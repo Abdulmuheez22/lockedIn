@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { passwordHasher, verifyPassword } from "../utils/bcrpt.js";
 import { generateOtp } from "../utils/otp.js";
 import { sendOtp } from "../utils/emailService.js";
+import {tokenGenerator} from "../utils/jwt.js";
 
 export const signUp = async (req: Request, res: Response) => {
   try {
@@ -106,6 +107,8 @@ export const otpVerification = async (req: Request, res: Response) => {
     await db.update(usersTable)
       .set({ isEmailVerified: true, otp: null, expiresAt: null })
       .where(eq(usersTable.email, validatedEmail));
+
+
 
     return res.status(200).json({ message: "Email verified successfully" });
     
