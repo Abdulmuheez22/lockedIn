@@ -6,7 +6,7 @@ import otpEMailtemplate from "../templates/otpEMail.template.js";
 export const sendOtp = async (userEmail: string, userName: string, otp: string) => {
 
     let info = await transporter.sendMail({
-      from: `Abdulmuheez ${env.userEmail}`, 
+      from: `Locked In Circle ${env.userEmail}`, 
       to: userEmail, 
       subject: "OTP VERIFICATION CODE", 
       html: otpEMailtemplate(userName, otp),

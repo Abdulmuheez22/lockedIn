@@ -6,7 +6,16 @@ import { eq } from "drizzle-orm";
 import { passwordHasher, verifyPassword } from "../utils/bcrpt.js";
 import { generateOtp } from "../utils/otp.js";
 import { sendOtp } from "../utils/emailService.js";
-import {tokenGenerator} from "../utils/jwt.js";
+import { generateAccessToken, generateRefreshToken, hashToken, verifyRefreshToken } from "../utils/token.js"; 
+import { accessCookieOptions, refreshCookieOptions, clearCookieOptions,} from "../utils/cookies.js";
+import env from "../config/env.js";
+
+function createTokenPair(user: { id: string; email: string }) {
+ return {
+ accessToken: generateAccessToken(user),
+ refreshToken: generateRefreshToken(user),
+ };
+}
 
 export const signUp = async (req: Request, res: Response) => {
   try {
@@ -31,7 +40,8 @@ export const signUp = async (req: Request, res: Response) => {
 
     const otp = generateOtp();
 
-    const firstName: string = validatedRequest.data.fullName.trim().split(/\s+/)[0] ?? "";
+    const firstName: string =
+      validatedRequest.data.fullName.trim().split(/\s+/)[0] ?? "";
 
     const hashedOtp = await passwordHasher(otp);
 
@@ -50,17 +60,19 @@ export const signUp = async (req: Request, res: Response) => {
       expiresAt: expireAt,
       isEmailVerified: false,
     });
- 
+
     // send otp here.
     await sendOtp(validatedRequest.data.email, firstName, otp);
-    console.log('Account created')
-    return res.status(201).json({ message: "Your account have be created Successfully!, Check your email for verification OTP" });
+    console.log("Account created");
+    return res.status(201).json({
+      message:
+        "Your account have be created Successfully!, Check your email for verification OTP",
+    });
   } catch (error) {
     console.log("this error is from the signup catch: ", error);
     return res.status(500).json({ message: "Error Creating Account" });
   }
 };
-
 
 export const otpVerification = async (req: Request, res: Response) => {
   try {
@@ -90,30 +102,34 @@ export const otpVerification = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Email already verified" });
     }
 
-    if(!userData.otp) {
+    if (!userData.otp) {
       return res.status(400).json({ message: "No OTP found" });
     }
 
-    if(!userData.expiresAt || new Date() > userData.expiresAt) {
+    if (!userData.expiresAt || new Date() > userData.expiresAt) {
       return res.status(400).json({ message: "OTP has expired" });
     }
-    
+
     const isOtpValid = await verifyPassword(validatedOtp, userData.otp);
 
     if (!isOtpValid) {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
-    await db.update(usersTable)
-      .set({ isEmailVerified: true, otp: null, expiresAt: null })
-      .where(eq(usersTable.email, validatedEmail));
+    await db.update(usersTable).set({ isEmailVerified: true, otp: null, expiresAt: null }).where(eq(usersTable.email, validatedEmail));
 
+    const { accessToken, refreshToken } = createTokenPair(userData);
 
+    await db.update(usersTable).set({ refreshToken: hashToken(refreshToken) }).where(eq(usersTable.id, userData.id));
 
-    return res.status(200).json({ message: "Email verified successfully" });
-    
+    return res.status(200).cookie("accessToken", accessToken, accessCookieOptions).cookie("refreshToken", refreshToken, refreshCookieOptions).json({
+        message: "Email verified successfully",
+        user: { id: userData.id, email: userData.email, role: userData.role },
+        accessToken,
+      });
+
   } catch (error) {
-    console.log('otpVerification error: ', error)
-    return res.status(500).json({ message: 'error verifying otp'})
+    console.log("otpVerification error: ", error);
+    return res.status(500).json({ message: "error verifying otp" });
   }
-}
+};

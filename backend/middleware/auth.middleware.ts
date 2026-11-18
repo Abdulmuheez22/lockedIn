@@ -1,50 +1,48 @@
 import type { Request, Response, NextFunction } from "express";
-import type { JwtPayload } from "jsonwebtoken";
-import env from "../config/env.js";
-import { verifyToken } from "../utils/jwt.js";
+import { eq } from "drizzle-orm";
+import { db } from "../src/index.js";
+import { usersTable } from "../src/db/schema.js";
+import { verifyAccessToken } from "../utils/token.js";
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: JwtPayload;
-    }
-  }
+
+
+function extractToken(req: Request): string | undefined {
+  const cookieToken: unknown = req.cookies?.accessToken;
+  if (typeof cookieToken === "string" && cookieToken) return cookieToken;
+  const header = req.header("Authorization");
+  if (header?.startsWith("Bearer ")) return header.slice(7);
+  return undefined;
 }
 
-const authenticate = ( req: Request, res: Response, next: NextFunction, required: boolean,) => {
-  const authorization = req.get("authorization");
-  const bearerMatch = authorization?.match(/^Bearer\s+(.+)$/i);
-  const bearerToken = bearerMatch?.[1]?.trim();
-  const token = authorization ? bearerToken : req.cookies.token;
+
+
+export async function verifyJWT( req: Request, res: Response, next: NextFunction): Promise<void> {
+
+  const token = extractToken(req);
 
   if (!token) {
-    if (!required && !authorization) {
-      return next();
-    }
-    return res.status(401).json({ message: "Unauthorized" });
+    res.status(401).json({ message: "Unauthorized" });
+    return;
   }
+
+  
+  let userId: string;
 
   try {
-    if (!env.jwtSecret) { return res.status(500).json({ message: "Server configuration error" }) }
-    const decodedjwt = verifyToken(token, env.jwtSecret);
-    if (typeof decodedjwt === "string") {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    // A password reset token is signed with the same secret, so it must be
-    // refused here — it is only meant for /auth/resetPassword.
-    if (decodedjwt.purpose === "password-reset") {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    req.user = decodedjwt;
-    next();
-  } catch (error) {
-    console.log("this error is from the authmiddleware catch: ", error);
-    // Must respond, otherwise the request hangs forever and the client
-    // spins until it times out (e.g. an expired token).
-    return res.status(401).json({ message: "Unauthorized" });
+    userId = verifyAccessToken(token).sub;
+  } catch {
+    // bad signature, expired, malformed... all of these are "not authenticated"
+    res.status(401).json({ message: "Invalid or expired token" });
+    return;
   }
-};
+  // const [user] = await db.select({ id: usersTable.id, email: usersTable.email}) .from(usersTable) .where(eq(usersTable.id, userId)) .limit(1);
 
-export const authmiddleware = ( req: Request, res: Response, next: NextFunction, ) => authenticate(req, res, next, true);
+  // if (!user) {
+  //   res.status(401).json({ message: "Invalid or expired token" });
+  //   return;
+  // }
 
-export const optionalAuthMiddleware = ( req: Request, res: Response, next: NextFunction,) => authenticate(req, res, next, false);
+  (req as Request & { id: string }).id = userId;
+
+  next();
+}

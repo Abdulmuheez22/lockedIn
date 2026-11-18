@@ -2,7 +2,7 @@
   "type": "base",
   "version": "9",
   "dialect": "postgres",
-  "id": "2e8c0097-338c-4b1b-b985-852da2ab3506",
+  "id": "5741e9af-07bb-4639-887d-2173eeee59bf",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -70,6 +70,19 @@
       "notNull": true,
       "dimensions": 0,
       "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "name": "role",
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'member'",
       "generated": null,
       "identity": null,
       "entityType": "columns"
@@ -161,6 +174,19 @@
       "notNull": true,
       "dimensions": 0,
       "default": "false",
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "name": "refreshToken",
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
       "generated": null,
       "identity": null,
       "entityType": "columns"

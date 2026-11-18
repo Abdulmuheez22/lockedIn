@@ -1,13 +1,24 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router";
+import { useMutation } from "@tanstack/react-query";
+import { verifyOtp } from "../services/api.services";
 
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 60;
 
 /* ---------- tiny inline icons ---------- */
 const LockIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="#ffffff"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <rect x="4" y="11" width="16" height="10" rx="2" />
     <path d="M8 11V7a4 4 0 0 1 8 0v4" />
     <circle cx="12" cy="16" r="1.4" fill="#ffffff" stroke="none" />
@@ -15,21 +26,48 @@ const LockIcon = () => (
 );
 
 const CheckIcon = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="28"
+    height="28"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="#ffffff"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M20 6L9 17l-5-5" />
   </svg>
 );
 
 const Spinner = () => (
   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+    <circle
+      className="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      strokeWidth="4"
+    />
+    <path
+      className="opacity-75"
+      fill="currentColor"
+      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+    />
   </svg>
 );
 
 const ShieldNote = () => (
   <p className="flex items-center justify-center gap-1.5 mt-6 text-[11px] text-neutral-400">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <rect x="4" y="11" width="16" height="10" rx="2" />
       <path d="M8 11V7a4 4 0 0 1 8 0v4" />
     </svg>
@@ -55,7 +93,9 @@ export default function OtpVerification() {
   /* ------- URL params ------- */
   const params = new URLSearchParams(window.location.search);
   const accountData = location.state?.accountData ?? {};
-  const email = decodeURIComponent(accountData.email || params.get("email") || "you@example.com");
+  const email = decodeURIComponent(
+    accountData.email || params.get("email") || "you@example.com",
+  );
   const expectedCode = params.get("code"); // demo only — verify server-side in production
 
   const handleChangeEmail = () => {
@@ -81,7 +121,10 @@ export default function OtpVerification() {
 
   const focusBox = (i) => {
     const el = inputsRef.current[i];
-    if (el) { el.focus(); el.select(); }
+    if (el) {
+      el.focus();
+      el.select();
+    }
   };
 
   const fail = useCallback((msg) => {
@@ -91,6 +134,17 @@ export default function OtpVerification() {
     setTimeout(() => focusBox(0), 60);
   }, []);
 
+  const { mutate, isPending, isError } = useMutation({
+    mutationFn: verifyOtp,
+    onSuccess: (data) => {
+      console.log("Email verified Successfully:", data);
+      // redirect, show toast, etc.
+    },
+    onError: (error) => {
+      console.log("Error:", error.message);
+    },
+  });
+
   /* ------- verify ------- */
   const verify = useCallback(() => {
     if (fullCode.length < OTP_LENGTH) {
@@ -99,6 +153,10 @@ export default function OtpVerification() {
     }
     setStatus("loading");
     setError("");
+
+    /// here is where you will place your api call
+    mutate({ email, otp: fullCode });
+
     // TODO: replace with real API call — verification must be server-side
     setTimeout(() => {
       if (expectedCode && fullCode !== expectedCode) {
@@ -106,7 +164,9 @@ export default function OtpVerification() {
         fail("That code doesn't match. Please try again.");
       } else {
         setStatus("success");
-        setTimeout(() => { /* window.location.href = "/dashboard"; */ }, 1800);
+        setTimeout(() => {
+          /* window.location.href = "/dashboard"; */
+        }, 1800);
       }
     }, 1200);
   }, [fullCode, expectedCode, fail]);
@@ -156,7 +216,9 @@ export default function OtpVerification() {
 
   const handlePaste = (e) => {
     e.preventDefault();
-    const text = (e.clipboardData.getData("text") || "").replace(/\D/g, "").slice(0, OTP_LENGTH);
+    const text = (e.clipboardData.getData("text") || "")
+      .replace(/\D/g, "")
+      .slice(0, OTP_LENGTH);
     if (!text) return;
     const next = Array(OTP_LENGTH).fill("");
     text.split("").forEach((d, i) => (next[i] = d));
@@ -169,25 +231,41 @@ export default function OtpVerification() {
   /* ------- animation variants ------- */
   const container = {
     hidden: { opacity: 0 },
-    show: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.15 } },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.05, delayChildren: 0.15 },
+    },
   };
   const item = {
     hidden: { opacity: 0, y: 14 },
-    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 280, damping: 26 } },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: { type: "spring", stiffness: 280, damping: 26 },
+    },
   };
   const box = (i) => ({
     hidden: { opacity: 0, y: 12, scale: 0.9 },
     show: {
-      opacity: 1, y: 0, scale: 1,
-      transition: { type: "spring", stiffness: 320, damping: 22, delay: 0.3 + i * 0.05 },
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 320,
+        damping: 22,
+        delay: 0.3 + i * 0.05,
+      },
     },
   });
   const shakeAnim = { x: [0, -8, 8, -5, 5, 0], transition: { duration: 0.45 } };
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] text-[#050315] flex items-center justify-center p-3 sm:p-6"
+    <div
+      className="min-h-screen bg-[#FFFFFF] text-[#050315] flex items-center justify-center p-3 sm:p-6"
       style={{
-        backgroundImage: "radial-gradient(circle at 1px 1px, rgba(10,10,10,0.05) 1px, transparent 0)",
+        backgroundImage:
+          "radial-gradient(circle at 1px 1px, rgba(10,10,10,0.05) 1px, transparent 0)",
         backgroundSize: "28px 28px",
       }}
     >
@@ -209,19 +287,30 @@ export default function OtpVerification() {
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 260, damping: 15, delay: 0.1 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 260,
+                  damping: 15,
+                  delay: 0.1,
+                }}
                 className="w-16 h-16 rounded-full bg-[#0a0a0a] flex items-center justify-center mb-5 shadow-lg shadow-[#0a0a0a]/20"
               >
                 <CheckIcon />
               </motion.div>
               <motion.h2
-                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
                 className="text-2xl font-bold text-[#0a0a0a] tracking-tight"
               >
                 You're verified!
               </motion.h2>
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
-                className="text-sm text-[#737373] mt-2 leading-relaxed">
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="text-sm text-[#737373] mt-2 leading-relaxed"
+              >
                 Welcome to the circle. Redirecting you to your dashboard…
               </motion.p>
             </motion.div>
@@ -238,32 +327,59 @@ export default function OtpVerification() {
               className="w-[52px] h-[52px] rounded-full bg-[#0a0a0a] mx-auto mb-4 flex items-center justify-center shadow-lg shadow-[#0a0a0a]/25"
             >
               {/* <LockIcon /> */}
-            {/* </motion.div> */} 
-            <p className="text-lg sm:text-xl font-bold text-[#0a0a0a] tracking-tight">Locked In Circle</p>
-            <p className="text-[10px] font-semibold text-[#737373] tracking-[0.2em] uppercase mt-1">Members Portal</p>
+            {/* </motion.div> */}
+            <p className="text-lg sm:text-xl font-bold text-[#0a0a0a] tracking-tight">
+              Locked In Circle
+            </p>
+            <p className="text-[10px] font-semibold text-[#737373] tracking-[0.2em] uppercase mt-1">
+              Members Portal
+            </p>
           </motion.div>
 
-          <motion.div variants={item} className="h-px bg-[#e8e8e8] my-6 sm:my-7" />
+          <motion.div
+            variants={item}
+            className="h-px bg-[#e8e8e8] my-6 sm:my-7"
+          />
 
           {/* ---------- Heading ---------- */}
-          <motion.h1 variants={item} className="text-xl sm:text-2xl font-bold text-[#0a0a0a] tracking-tight text-center leading-snug">
+          <motion.h1
+            variants={item}
+            className="text-xl sm:text-2xl font-bold text-[#0a0a0a] tracking-tight text-center leading-snug"
+          >
             Check your email inbox
           </motion.h1>
-          <motion.p variants={item} className="text-[13px] sm:text-sm text-[#737373] text-center leading-relaxed mt-2.5">
-            We sent a 6-digit verification code to<br />
-            <strong className="text-[#0a0a0a] font-semibold break-all">{email}</strong>
+          <motion.p
+            variants={item}
+            className="text-[13px] sm:text-sm text-[#737373] text-center leading-relaxed mt-2.5"
+          >
+            We sent a 6-digit verification code to
+            <br />
+            <strong className="text-[#0a0a0a] font-semibold break-all">
+              {email}
+            </strong>
           </motion.p>
 
           {/* ---------- OTP boxes ---------- */}
-          <motion.div key={shakeKey} initial={false} animate={shakeKey ? shakeAnim : { x: 0 }} variants={item} className="mt-7">
-            <motion.div variants={container} initial="hidden" animate="show"
+          <motion.div
+            key={shakeKey}
+            initial={false}
+            animate={shakeKey ? shakeAnim : { x: 0 }}
+            variants={item}
+            className="mt-7"
+          >
+            <motion.div
+              variants={container}
+              initial="hidden"
+              animate="show"
               className="flex justify-center gap-1.5 sm:gap-2.5"
             >
               {digits.map((d, i) => (
                 <motion.input
                   key={i}
                   variants={box(i)}
-                  ref={(el) => { inputsRef.current[i] = el; }}
+                  ref={(el) => {
+                    inputsRef.current[i] = el;
+                  }}
                   type="text"
                   inputMode="numeric"
                   autoComplete={i === 0 ? "one-time-code" : "off"}
@@ -295,12 +411,26 @@ export default function OtpVerification() {
           <div className="min-h-[22px] text-center text-[13px] font-medium mt-2">
             <AnimatePresence mode="wait">
               {error && (
-                <motion.p key="err" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className="text-[#dc2626]">{error}</motion.p>
+                <motion.p
+                  key="err"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="text-[#dc2626]"
+                >
+                  {error}
+                </motion.p>
               )}
               {info && !error && (
-                <motion.p key="ok" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className="text-[#16a34a]">{info}</motion.p>
+                <motion.p
+                  key="ok"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="text-[#16a34a]"
+                >
+                  {info}
+                </motion.p>
               )}
             </AnimatePresence>
           </div>
@@ -317,12 +447,22 @@ export default function OtpVerification() {
             >
               <AnimatePresence mode="wait" initial={false}>
                 {status === "loading" ? (
-                  <motion.span key="load" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="flex items-center gap-2">
+                  <motion.span
+                    key="load"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex items-center gap-2"
+                  >
                     <Spinner /> Verifying...
                   </motion.span>
                 ) : (
-                  <motion.span key="label" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <motion.span
+                    key="label"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
                     Verify Email
                   </motion.span>
                 )}
@@ -331,7 +471,10 @@ export default function OtpVerification() {
           </motion.div>
 
           {/* ---------- Resend + alt ---------- */}
-          <motion.p variants={item} className="text-center text-[13px] text-[#737373] mt-6">
+          <motion.p
+            variants={item}
+            className="text-center text-[13px] text-[#737373] mt-6"
+          >
             Didn't get the code?{" "}
             {cooldown > 0 ? (
               <span className="font-medium">Resend in {cooldown}s</span>
@@ -345,7 +488,10 @@ export default function OtpVerification() {
               </button>
             )}
           </motion.p>
-          <motion.p variants={item} className="text-center text-[13px] text-[#737373] mt-3.5">
+          <motion.p
+            variants={item}
+            className="text-center text-[13px] text-[#737373] mt-3.5"
+          >
             Wrong email?{" "}
             <button
               type="button"

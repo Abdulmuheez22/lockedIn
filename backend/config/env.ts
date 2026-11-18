@@ -10,8 +10,11 @@ const env = {
   smtpUser: process.env.SMTP_LOGIN,
   smtpPass: process.env.SMTP_PASSWORD,
   userEmail: process.env.USER_EMAIL,
-  jwtExpiresIn: "10min",
-  jwtSecret: process.env.JWT_SECRET,
+isProd: process.env.NODE_ENV === "production",
+ clientUrl: process.env.CLIENT_URL,
+ databaseUrl: process.env.DATABASE_URL,
+ accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
+ refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET,
   cookie: {
     name: "token",
     base: { httpOnly: true, secure: isProd, sameSite: "lax", path: "/" },
