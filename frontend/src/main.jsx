@@ -7,6 +7,7 @@ import App from "./App.jsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import SignupForm from "./components/SignupForm.jsx"
 import OtpVerification from "./components/OtpVerification.jsx";
+import SignIn from "./components/SignIn.jsx";
 
 const queryClient = new QueryClient();
 
@@ -16,6 +17,7 @@ const router = createBrowserRouter([
     element: <App />,
     children: [
       { index: true, element: <SignupForm /> },
+      {path: "signin", element: <SignIn />},
       // { path: "signup", element: <signupForm /> },
       { path: "OtpVerification", element: <OtpVerification /> },
     ],

@@ -247,7 +247,7 @@ export default function SignupForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] text-[#050315] flex items-center justify-center p-4 sm:p-8">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#050315] flex items-center justify-center p-4 sm:p-8">
       {/* subtle background texture */}
       <div
         className="fixed inset-0 pointer-events-none"

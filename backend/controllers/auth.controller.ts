@@ -76,11 +76,15 @@ export const signUp = async (req: Request, res: Response) => {
 
 export const otpVerification = async (req: Request, res: Response) => {
   try {
+    // console.log(req.body)
     const validatedRequest = otpSchema.safeParse(req.body);
 
     if (!validatedRequest.success) {
+      console.log("otp zod error: ", validatedRequest.error)
       return res.status(400).json({ message: "Bad request" });
     }
+
+    // console.log(validatedRequest)
 
     const validatedEmail = validatedRequest.data.email;
 
@@ -107,20 +111,27 @@ export const otpVerification = async (req: Request, res: Response) => {
     }
 
     if (!userData.expiresAt || new Date() > userData.expiresAt) {
+      console.log('otp has already expired')
       return res.status(400).json({ message: "OTP has expired" });
     }
 
     const isOtpValid = await verifyPassword(validatedOtp, userData.otp);
 
     if (!isOtpValid) {
+      console.log("invaid otp");
+      
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
     await db.update(usersTable).set({ isEmailVerified: true, otp: null, expiresAt: null }).where(eq(usersTable.email, validatedEmail));
 
+    console.log(userData)
     const { accessToken, refreshToken } = createTokenPair(userData);
 
+
     await db.update(usersTable).set({ refreshToken: hashToken(refreshToken) }).where(eq(usersTable.id, userData.id));
+
+    console.log("Email verified successfully")
 
     return res.status(200).cookie("accessToken", accessToken, accessCookieOptions).cookie("refreshToken", refreshToken, refreshCookieOptions).json({
         message: "Email verified successfully",

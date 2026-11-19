@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router";
 import { useMutation } from "@tanstack/react-query";
@@ -127,6 +133,10 @@ export default function OtpVerification() {
     }
   };
 
+  useLayoutEffect(() => {
+    inputsRef.current[0]?.focus();
+  }, []);
+
   const fail = useCallback((msg) => {
     setError(msg);
     setShakeKey((k) => k + 1);
@@ -138,10 +148,17 @@ export default function OtpVerification() {
     mutationFn: verifyOtp,
     onSuccess: (data) => {
       console.log("Email verified Successfully:", data);
+      setStatus("success");
       // redirect, show toast, etc.
     },
     onError: (error) => {
-      console.log("Error:", error.message);
+      console.error("OTP verification failed:", error);
+      setStatus("idle");
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "OTP verification failed. Please try again.",
+      );
     },
   });
 
@@ -158,17 +175,17 @@ export default function OtpVerification() {
     mutate({ email, otp: fullCode });
 
     // TODO: replace with real API call — verification must be server-side
-    setTimeout(() => {
-      if (expectedCode && fullCode !== expectedCode) {
-        setStatus("idle");
-        fail("That code doesn't match. Please try again.");
-      } else {
-        setStatus("success");
-        setTimeout(() => {
-          /* window.location.href = "/dashboard"; */
-        }, 1800);
-      }
-    }, 1200);
+    //   setTimeout(() => {
+    //     if (expectedCode && fullCode !== expectedCode) {
+    //       setStatus("idle");
+    //       fail("That code doesn't match. Please try again.");
+    //     } else {
+    //       setStatus("success");
+    //       setTimeout(() => {
+    //         /* window.location.href = "/dashboard"; */
+    //       }, 1800);
+    //     }
+    //   }, 1200);
   }, [fullCode, expectedCode, fail]);
 
   /* auto-submit when complete */
@@ -379,6 +396,10 @@ export default function OtpVerification() {
                   variants={box(i)}
                   ref={(el) => {
                     inputsRef.current[i] = el;
+                  }}
+                  autoFocus={i === 0}
+                  onAnimationComplete={() => {
+                    if (i === 0) focusBox(0);
                   }}
                   type="text"
                   inputMode="numeric"
