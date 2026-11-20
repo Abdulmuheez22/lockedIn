@@ -9,6 +9,7 @@ CREATE TABLE "users" (
 	"phoneNumber" varchar(255) NOT NULL,
 	"otp" varchar(255),
 	"expires_at" timestamp with time zone,
+	"last_otp_sent_at" timestamp with time zone,
 	"isEmailVerified" boolean DEFAULT false NOT NULL,
 	"refreshToken" varchar(255)
 );

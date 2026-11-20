@@ -33,3 +33,12 @@ export const otpSchema = z.object({
   email, 
   otp
 })
+
+export const signInSchema = z.object({
+  email,
+  password
+})
+
+export const resendOtpSchema = z.object({
+  email
+})

@@ -12,6 +12,7 @@ export const usersTable = pgTable("users", {
   phoneNumber: varchar({ length: 255 }).notNull(),
   otp: varchar({ length: 255 }),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
+  lastOtpSentAt: timestamp("last_otp_sent_at", { withTimezone: true }),
   isEmailVerified: boolean().default(false).notNull(),
   refreshToken: varchar({ length: 255 }),
 });

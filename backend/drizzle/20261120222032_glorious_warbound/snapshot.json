@@ -2,7 +2,7 @@
   "type": "base",
   "version": "9",
   "dialect": "postgres",
-  "id": "5741e9af-07bb-4639-887d-2173eeee59bf",
+  "id": "9bca6cf2-b83c-4b4a-b0b1-34482c80eb95",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -156,6 +156,19 @@
       "schema": "public",
       "table": "users",
       "name": "expires_at",
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "name": "last_otp_sent_at",
       "type": "timestamp with time zone",
       "typeSchema": null,
       "notNull": false,

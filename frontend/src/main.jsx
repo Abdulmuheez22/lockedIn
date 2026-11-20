@@ -8,6 +8,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import SignupForm from "./components/SignupForm.jsx"
 import OtpVerification from "./components/OtpVerification.jsx";
 import SignIn from "./components/SignIn.jsx";
+import ForgotPassword from "./components/ForgotPassword.jsx";
+
+
+
 
 const queryClient = new QueryClient();
 
@@ -19,6 +23,7 @@ const router = createBrowserRouter([
       { index: true, element: <SignupForm /> },
       {path: "signin", element: <SignIn />},
       // { path: "signup", element: <signupForm /> },
+      {path: "forgotpassword", element: <ForgotPassword />},
       { path: "OtpVerification", element: <OtpVerification /> },
     ],
   },

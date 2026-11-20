@@ -1,21 +1,35 @@
 import type { Request, Response } from "express";
-import { signUpSchema, otpSchema } from "../utils/zodshema.js";
+import {
+  signUpSchema,
+  otpSchema,
+  signInSchema,
+  resendOtpSchema,
+} from "../utils/zodshema.js";
 import { db } from "../src/index.js";
 import { usersTable } from "../src/db/schema.js";
 import { eq } from "drizzle-orm";
 import { passwordHasher, verifyPassword } from "../utils/bcrpt.js";
 import { generateOtp } from "../utils/otp.js";
 import { sendOtp } from "../utils/emailService.js";
-import { generateAccessToken, generateRefreshToken, hashToken, verifyRefreshToken } from "../utils/token.js"; 
-import { accessCookieOptions, refreshCookieOptions, clearCookieOptions,} from "../utils/cookies.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  hashToken,
+  verifyRefreshToken,
+} from "../utils/token.js";
+import {
+  accessCookieOptions,
+  refreshCookieOptions,
+  clearCookieOptions,
+} from "../utils/cookies.js";
 import env from "../config/env.js";
 
-function createTokenPair(user: { id: string; email: string }) {
- return {
- accessToken: generateAccessToken(user),
- refreshToken: generateRefreshToken(user),
- };
-}
+// function createTokenPair(user: { id: string; email: string }) {
+//   return {
+//     accessToken: generateAccessToken(user),
+//     refreshToken: generateRefreshToken(user),
+//   };
+// }
 
 export const signUp = async (req: Request, res: Response) => {
   try {
@@ -46,8 +60,14 @@ export const signUp = async (req: Request, res: Response) => {
     const hashedOtp = await passwordHasher(otp);
 
     const otpLifeSpan = 10 * 60 * 1000; // this is equivalent to 10 min in calculation
-
-    const expireAt = new Date(Date.now() + otpLifeSpan);
+    function createTokenPair(user: { id: string; email: string }) {
+      return {
+        accessToken: generateAccessToken(user),
+        refreshToken: generateRefreshToken(user),
+      };
+    }
+    const sentAt = new Date();
+    const expireAt = new Date(sentAt.getTime() + otpLifeSpan);
 
     await db.insert(usersTable).values({
       fullName: validatedRequest.data.fullName,
@@ -58,6 +78,7 @@ export const signUp = async (req: Request, res: Response) => {
       phoneNumber: validatedRequest.data.phoneNumber,
       otp: hashedOtp,
       expiresAt: expireAt,
+      lastOtpSentAt: sentAt,
       isEmailVerified: false,
     });
 
@@ -80,7 +101,7 @@ export const otpVerification = async (req: Request, res: Response) => {
     const validatedRequest = otpSchema.safeParse(req.body);
 
     if (!validatedRequest.success) {
-      console.log("otp zod error: ", validatedRequest.error)
+      console.log("otp zod error: ", validatedRequest.error);
       return res.status(400).json({ message: "Bad request" });
     }
 
@@ -90,7 +111,10 @@ export const otpVerification = async (req: Request, res: Response) => {
 
     const validatedOtp = validatedRequest.data.otp;
 
-    const user = await db.select().from(usersTable).where(eq(usersTable.email, validatedEmail));
+    const user = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.email, validatedEmail));
 
     if (!user || user.length === 0) {
       return res.status(404).json({ message: "User not found" });
@@ -111,7 +135,7 @@ export const otpVerification = async (req: Request, res: Response) => {
     }
 
     if (!userData.expiresAt || new Date() > userData.expiresAt) {
-      console.log('otp has already expired')
+      console.log("otp has already expired");
       return res.status(400).json({ message: "OTP has expired" });
     }
 
@@ -119,28 +143,197 @@ export const otpVerification = async (req: Request, res: Response) => {
 
     if (!isOtpValid) {
       console.log("invaid otp");
-      
+
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
-    await db.update(usersTable).set({ isEmailVerified: true, otp: null, expiresAt: null }).where(eq(usersTable.email, validatedEmail));
+    await db
+      .update(usersTable)
+      .set({ isEmailVerified: true, otp: null, expiresAt: null })
+      .where(eq(usersTable.email, validatedEmail));
 
-    console.log(userData)
-    const { accessToken, refreshToken } = createTokenPair(userData);
+    console.log(userData);
 
+    const accessToken = generateAccessToken(userData);
 
-    await db.update(usersTable).set({ refreshToken: hashToken(refreshToken) }).where(eq(usersTable.id, userData.id));
+    const refreshToken = generateRefreshToken(userData);
 
-    console.log("Email verified successfully")
+    await db
+      .update(usersTable)
+      .set({ refreshToken: hashToken(refreshToken) })
+      .where(eq(usersTable.id, userData.id));
 
-    return res.status(200).cookie("accessToken", accessToken, accessCookieOptions).cookie("refreshToken", refreshToken, refreshCookieOptions).json({
+    console.log("Email verified successfully");
+
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, accessCookieOptions)
+      .cookie("refreshToken", refreshToken, refreshCookieOptions)
+      .json({
         message: "Email verified successfully",
         user: { id: userData.id, email: userData.email, role: userData.role },
         accessToken,
       });
-
   } catch (error) {
     console.log("otpVerification error: ", error);
     return res.status(500).json({ message: "error verifying otp" });
+  }
+};
+
+export const signIn = async (req: Request, res: Response) => {
+  try {
+    const request = signInSchema.safeParse(req.body);
+
+    if (!request.success) {
+      console.log("signIn zod error: ", request.error);
+      return res.status(400).json({ message: "Bad request" });
+    }
+
+    const [user] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.email, request.data.email));
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!user.isEmailVerified) {
+      return res.status(400).json({ message: "Email not verified" });
+    }
+
+    const isPasswordValid = await verifyPassword(
+      request.data.password,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: "Invalid password" });
+    }
+
+    const accessToken = generateAccessToken(user);
+
+    const refreshToken = generateRefreshToken(user);
+
+    await db
+      .update(usersTable)
+      .set({ refreshToken: hashToken(refreshToken) })
+      .where(eq(usersTable.id, user.id));
+
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, accessCookieOptions)
+      .cookie("refreshToken", refreshToken, refreshCookieOptions)
+      .json({
+        user: { id: user.id, email: user.email },
+        accessToken,
+        refreshToken,
+        message: "Logged in successfully",
+      });
+  } catch (error) {
+    console.log("signIn error: ", error);
+    return res.status(500).json({ message: "error signing in" });
+  }
+};
+
+export const resendOtp = async (req: Request, res: Response) => {
+  try {
+    const request = resendOtpSchema.safeParse(req.body);
+
+    if (!request.success) {
+      return res.status(400).json({ message: "Invalid email" });
+    }
+
+    const { email } = request.data;
+
+    const [user] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.email, email));
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({ message: "Account already verified" });
+    }
+
+    const COOLDOWN_MS = 60 * 1000;
+    if (
+      user.lastOtpSentAt &&
+      Date.now() - new Date(user.lastOtpSentAt).getTime() < COOLDOWN_MS
+    ) {
+      return res
+        .status(429)
+        .json({ message: "Wait before requesting another OTP" });
+    }
+
+    const otp = generateOtp();
+    const hashedOtp = await passwordHasher(otp);
+    const now = new Date();
+
+    await db
+      .update(usersTable)
+      .set({
+        otp: hashedOtp,
+        expiresAt: new Date(now.getTime() + 10 * 60 * 1000),
+        lastOtpSentAt: now,
+      })
+      .where(eq(usersTable.id, user.id));
+
+    const firstName = user.fullName.trim().split(/\s+/)[0] ?? "";
+    await sendOtp(user.email, firstName, otp);
+
+    return res
+      .status(200)
+      .json({ message: "A new OTP has been sent to your email" });
+  } catch (error) {
+    console.log("resendOtp error: ", error);
+    return res.status(500).json({ message: "Error resending OTP, try again" });
+  }
+};
+
+
+export const forgetPassword = async (req: Request, res: Response) => {
+  try {
+    const request = resendOtpSchema.safeParse(req.body);
+
+    if (!request.success) {
+      return res.status(400).json({ message: "Invalid email" });
+    }
+
+    const { email } = request.data;
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email));
+
+    if (!user) {
+      return res.status(200).json({ message: "User not found" });
+    }
+
+    const COOLDOWN_MS = 60 * 1000;
+
+    if ( user.lastOtpSentAt && Date.now() - new Date(user.lastOtpSentAt).getTime() < COOLDOWN_MS ) {
+      return res.status(429).json({ message: "Wait before requesting another code" });
+    }
+
+    const otp = generateOtp();
+
+    const hashedOtp = await passwordHasher(otp);
+
+    // 7. Save reset fields
+    await db.update(usersTable).set({
+        otp: hashedOtp,
+        lastOtpSentAt: new Date(),
+      }).where(eq(usersTable.id, user.id));
+
+    const firstName = user.fullName.trim().split(/\s+/)[0] ?? "";
+    
+    await sendOtp(user.email, firstName, otp);
+
+    return res.status(200).json({ message: "If that email exists, a reset code has been sent" });
+  } catch (error) {
+    console.log("forgetPassword error: ", error);
+    return res.status(500).json({ message: "Error processing request" });
   }
 };

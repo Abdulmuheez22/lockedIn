@@ -251,11 +251,11 @@ export default function SignupForm() {
       {/* subtle background texture */}
       <div
         className="fixed inset-0 pointer-events-none"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, rgba(10,10,10,0.05) 1px, transparent 0)",
-          backgroundSize: "28px 28px",
-        }}
+        // style={{
+        //   backgroundImage:
+        //     "radial-gradient(circle at 1px 1px, rgba(10,10,10,0.05) 1px, transparent 0)",
+        //   backgroundSize: "28px 28px",
+        // }}
       />
 
       <motion.div
@@ -274,7 +274,7 @@ export default function SignupForm() {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.45, ease: "easeOut" }}
-          className="bg-[#ffffff] border border-[#e8e8e8] rounded-3xl p-7 sm:p-9 shadow-[0_20px_60px_-15px_rgba(10,10,10,0.12)]"
+          className="bg-[#ffffff] rounded-3xl p-7 sm:p-9"
         >
           <AnimatePresence mode="wait">
             {submitted ? (
