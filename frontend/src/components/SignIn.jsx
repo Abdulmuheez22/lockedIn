@@ -384,7 +384,7 @@ export default function SignIn() {
                           className="flex items-center gap-2"
                         >
                           <Spinner /> Signing in…
-                        </motion.span>
+                        </motion.span>  
                       ) : status === "success" ? (
                         <motion.span
                           key="success"

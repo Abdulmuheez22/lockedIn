@@ -1,9 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router";
 import { useMutation } from "@tanstack/react-query";
-// Replace with your actual API service functions:
-// import { requestPasswordReset, verifyResetOtp, resetPassword } from "../services/api.services";
+import {
+  forgetPassword1,
+  forgetPassword2,
+  resetPassword,
+} from "../services/api.services";
 
 /* ---------- inline SVG icons ---------- */
 const MailIcon = () => (
@@ -217,18 +220,18 @@ export default function ForgotPassword() {
 
   /* ------- mutations (wire your api.services here) ------- */
   const sendOtpMutation = useMutation({
-    mutationFn: async (payload) => {
-      // Replace with: return requestPasswordReset(payload);
-      await new Promise((r) => setTimeout(r, 750));
-      return { ok: true, email: payload.email };
-    },
-    onSuccess: () => {
+    mutationFn: forgetPassword1,
+
+    onSuccess: (data) => {
+      console.log("Success: ", data);
+      
       setErrors({ email: "", otp: "", password: "", confirm: "" });
       setOtp(Array(OTP_LENGTH).fill(""));
       setResendTimer(60);
       if (step === 0) goToStep(1);
     },
     onError: (err) => {
+      console.log("Error: ", err)
       setErrors((prev) => ({
         ...prev,
         email:
@@ -239,14 +242,12 @@ export default function ForgotPassword() {
     },
   });
 
+  // const sendEmail
+
   const verifyOtpMutation = useMutation({
-    mutationFn: async (payload) => {
-      // Replace with: return verifyResetOtp(payload);
-      await new Promise((r) => setTimeout(r, 750));
-      return { resetToken: "verified-session-token", ...payload };
-    },
+    mutationFn: forgetPassword2,
     onSuccess: (data) => {
-      setResetToken(data?.resetToken || "");
+      setResetToken("verified");
       setErrors((prev) => ({ ...prev, otp: "" }));
       goToStep(2);
     },
@@ -262,11 +263,7 @@ export default function ForgotPassword() {
   });
 
   const resetPasswordMutation = useMutation({
-    mutationFn: async (payload) => {
-      // Replace with: return resetPassword(payload);
-      await new Promise((r) => setTimeout(r, 850));
-      return { ok: true, ...payload };
-    },
+    mutationFn: resetPassword,
     onSuccess: () => {
       goToStep(3);
     },
@@ -519,6 +516,7 @@ export default function ForgotPassword() {
                             id="reset-email"
                             type="email"
                             autoComplete="email"
+                            autoFocus
                             placeholder="you@example.com"
                             value={email}
                             onChange={(e) => {
@@ -887,15 +885,18 @@ export default function ForgotPassword() {
                       Your password has been reset successfully. You can now sign in with your new credentials.
                     </p>
 
+                    <Link>
+                    to="/signin"
                     <motion.button
                       type="button"
-                      onClick={() => navigate("/login")}
+                      // onClick={() => navigate("/signin")}
                       whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.98 }}
                       className="w-full mt-7 py-3.5 rounded-xl bg-[#0a0a0a] text-white text-[15px] font-semibold flex items-center justify-center gap-2 shadow-lg shadow-[#0a0a0a]/25 hover:bg-[#1f1f1f] transition-colors duration-200"
                     >
                       Back to sign in <ArrowRightIcon />
                     </motion.button>
+                    </Link>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -904,13 +905,15 @@ export default function ForgotPassword() {
             {/* ---------- Footer Navigation ---------- */}
             {step < 3 && (
               <div className="mt-6 text-center">
+                <Link to="/signin">
                 <button
                   type="button"
-                  onClick={() => navigate("/login")}
+                  // onClick={() => navigate("/login")}
                   className="inline-flex items-center justify-center gap-1.5 text-[13px] font-semibold text-[#737373] hover:text-[#0a0a0a] transition-colors"
                 >
                   <ArrowLeftIcon /> Back to sign in
                 </button>
+                </Link>
               </div>
             )}
 

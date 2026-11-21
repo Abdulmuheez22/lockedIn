@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
 import { signUp } from "../services/api.services";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 
 const levels = [
   "100 Level",
@@ -17,33 +17,11 @@ const levels = [
 function Logo() {
   return (
     <div className="flex items-center gap-3">
-      {/* <motion.div
-        initial={{ rotate: -12, opacity: 0, scale: 0.8 }}
-        animate={{ rotate: 0, opacity: 1, scale: 1 }}
-        transition={{ type: "spring", stiffness: 260, damping: 18 }}
-        className="relative w-11 h-11 rounded-full bg-[#0a0a0a] flex items-center justify-center shadow-lg shadow-[#0a0a0a]/15"
-      > */}
-      {/* <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#ffffff"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <rect x="4" y="11" width="16" height="10" rx="2" />
-          <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-          <circle cx="12" cy="16" r="1.4" fill="#ffffff" stroke="none" />
-        </svg> */}
-      {/* <span className="absolute inset-0 rounded-full border border-[#0a0a0a]/10" /> */}
-      {/* </motion.div> */}
       <div className="leading-tight">
-        <p className="text-[#0a0a0a] font-extrabold text-2xl tracking-tighter">
+        <p className="text-[#0a0a0a] font-extrabold text-xl sm:text-2xl tracking-tighter">
           Locked In Circle
         </p>
-        <p className="text-[#737373] text-[11px] font-medium uppercase tracking-[0.18em]">
+        <p className="text-[#737373] text-[10px] sm:text-[11px] font-medium uppercase tracking-[0.18em]">
           Members Portal
         </p>
       </div>
@@ -64,11 +42,11 @@ function getStrength(pw) {
 const strengthLabels = ["Too weak", "Weak", "Fair", "Good", "Strong"];
 const strengthColors = ["#ef4444", "#f59e0b", "#eab308", "#84cc16", "#22c55e"];
 
-/* ---------- Reusable field wrapper ---------- */
-function Field({ label, hint, error, children }) {
+/* ---------- Reusable field wrapper with error highlights ---------- */
+function Field({ label, hint, error, isError, children }) {
   return (
-    <div className="mb-5">
-      <label className="block text-[13px] font-semibold text-[#0a0a0a] mb-1.5">
+    <div className="mb-4 sm:mb-5">
+      <label className="block text-[12px] sm:text-[13px] font-semibold text-[#0a0a0a] mb-1.5">
         {label}
         {hint && (
           <span className="text-[#737373] font-normal ml-1.5">{hint}</span>
@@ -81,7 +59,7 @@ function Field({ label, hint, error, children }) {
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="text-[#dc2626] text-xs mt-1.5 flex items-center gap-1"
+            className="text-[#dc2626] text-[12px] sm:text-xs mt-1.5 flex items-center gap-1 font-medium"
           >
             <svg
               width="12"
@@ -90,11 +68,12 @@ function Field({ label, hint, error, children }) {
               fill="none"
               stroke="currentColor"
               strokeWidth="2.5"
+              className="shrink-0"
             >
               <circle cx="12" cy="12" r="10" />
               <path d="M12 8v4M12 16h.01" />
             </svg>
-            {error}
+            <span>{error}</span>
           </motion.p>
         )}
       </AnimatePresence>
@@ -102,8 +81,12 @@ function Field({ label, hint, error, children }) {
   );
 }
 
-const inputClass =
-  "w-full bg-[#ffffff] border border-[#e5e5e5] rounded-xl px-4 py-3 text-[#0a0a0a] placeholder-[#a3a3a3] text-sm focus:outline-none focus:ring-4 focus:ring-[#0a0a0a]/5 focus:border-[#0a0a0a] transition-all duration-200";
+const getInputClass = (hasError) =>
+  `w-full bg-[#ffffff] border-[1.5px] rounded-xl px-3.5 sm:px-4 py-2.5 sm:py-3 text-[#0a0a0a] placeholder-[#a3a3a3] text-[14px] sm:text-sm outline-none transition-all duration-200 ${
+    hasError
+      ? "border-[#dc2626] focus:border-[#dc2626] focus:ring-4 focus:ring-[#dc2626]/10"
+      : "border-[#e5e5e5] focus:border-[#0a0a0a] focus:ring-4 focus:ring-[#0a0a0a]/5"
+  }`;
 
 const EyeIcon = ({ off }) =>
   off ? (
@@ -140,6 +123,8 @@ const EyeIcon = ({ off }) =>
 
 export default function SignupForm() {
   const location = useLocation();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -168,8 +153,22 @@ export default function SignupForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState({});
+  const [globalError, setGlobalError] = useState("");
+  const [isUnverifiedConflict, setIsUnverifiedConflict] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [shakeKey, setShakeKey] = useState(0);
+
+  /* Field Refs for auto-focusing on error */
+  const nameRef = useRef(null);
+  const emailRef = useRef(null);
+  const passwordRef = useRef(null);
+  const confirmRef = useRef(null);
+  const levelRef = useRef(null);
+  const deptRef = useRef(null);
+  const phoneRef = useRef(null);
+
+  const shake = useCallback(() => setShakeKey((k) => k + 1), []);
 
   const strength = useMemo(
     () => getStrength(formData.password),
@@ -180,65 +179,122 @@ export default function SignupForm() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+    if (globalError) setGlobalError("");
+    if (isUnverifiedConflict) setIsUnverifiedConflict(false);
   };
 
   const validate = () => {
     const newErrors = {};
-    if (!formData.fullName.trim()) newErrors.fullName = "Full name is required";
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(formData.email))
+    let firstBadField = null;
+
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Full name is required";
+      firstBadField = firstBadField || nameRef;
+    }
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+      firstBadField = firstBadField || emailRef;
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Enter a valid email address";
-    if (!formData.password) newErrors.password = "Password is required";
-    else if (formData.password.length < 6)
+      firstBadField = firstBadField || emailRef;
+    }
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+      firstBadField = firstBadField || passwordRef;
+    } else if (formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
-    if (formData.password !== formData.confirmPassword)
+      firstBadField = firstBadField || passwordRef;
+    }
+    if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
-    if (!formData.level) newErrors.level = "Please select your level";
-    if (!formData.department.trim())
+      firstBadField = firstBadField || confirmRef;
+    }
+    if (!formData.level) {
+      newErrors.level = "Please select your level";
+      firstBadField = firstBadField || levelRef;
+    }
+    if (!formData.department.trim()) {
       newErrors.department = "Department is required";
-    if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
+      firstBadField = firstBadField || deptRef;
+    }
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+      firstBadField = firstBadField || phoneRef;
+    }
+
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (Object.keys(newErrors).length > 0) {
+      shake();
+      firstBadField?.current?.focus();
+      return false;
+    }
+    return true;
   };
 
-  const { mutate, isPending, isError } = useMutation({
+  const { mutate } = useMutation({
     mutationFn: signUp,
     onSuccess: (data) => {
-      console.log("Success:", data);
-       setIsSubmitting(false);
+      setIsSubmitting(false);
       setSubmitted(true);
     },
     onError: (error) => {
-      console.log("Error:", error.message);
+      setIsSubmitting(false);
+      shake();
+
+      const errorData = error.response?.data;
+      const message =
+        errorData?.message ||
+        error.message ||
+        "We couldn't create your account. Please check your details and try again.";
+
+      // Check if backend flags email already registered but unverified
+      const isUnverified =
+        errorData?.isUnverified ||
+        message.toLowerCase().includes("unverified") ||
+        message.toLowerCase().includes("already registered");
+
+      if (isUnverified) {
+        setIsUnverifiedConflict(true);
+        setGlobalError(
+          "An account with this email already exists but has not been verified yet."
+        );
+      } else if (message.toLowerCase().includes("email")) {
+        setErrors((prev) => ({ ...prev, email: message }));
+        emailRef.current?.focus();
+      } else {
+        setGlobalError(message);
+      }
     },
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!validate()) return;
+
     setIsSubmitting(true);
-    setTimeout(() => {
-          mutate({
-      fullName: formData.fullName,
-      email: formData.email,
+    setGlobalError("");
+    setIsUnverifiedConflict(false);
+
+    mutate({
+      fullName: formData.fullName.trim(),
+      email: formData.email.trim(),
       password: formData.password,
       level: formData.level,
-      department: formData.department,
-      phoneNumber: formData.phone,
+      department: formData.department.trim(),
+      phoneNumber: formData.phone.trim(),
     });
-      console.log("Form submitted:", formData);
-    }, 1500);
   };
 
   const container = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.05, delayChildren: 0.15 },
+      transition: { staggerChildren: 0.04, delayChildren: 0.1 },
     },
   };
   const item = {
-    hidden: { opacity: 0, y: 14 },
+    hidden: { opacity: 0, y: 12 },
     show: {
       opacity: 1,
       y: 0,
@@ -246,44 +302,39 @@ export default function SignupForm() {
     },
   };
 
-  return (
-    <div className="min-h-screen bg-[#FFFFFF] text-[#050315] flex items-center justify-center p-4 sm:p-8">
-      {/* subtle background texture */}
-      <div
-        className="fixed inset-0 pointer-events-none"
-        // style={{
-        //   backgroundImage:
-        //     "radial-gradient(circle at 1px 1px, rgba(10,10,10,0.05) 1px, transparent 0)",
-        //   backgroundSize: "28px 28px",
-        // }}
-      />
+  const shakeAnim = {
+    x: [0, -8, 8, -5, 5, 0],
+    transition: { duration: 0.42 },
+  };
 
+  return (
+    <div className="min-h-screen bg-[#FFFFFF] text-[#050315] flex items-center justify-center p-3 sm:p-6">
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-md relative"
+        className="w-full max-w-[420px] relative"
       >
-        {/* Header */}
-        <div className="mb-8">
+        {/* Header / Logo */}
+        <div className="mb-6 sm:mb-8">
           <Logo />
         </div>
 
-        {/* Card */}
+        {/* Form Container with Shake Wrapper */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.45, ease: "easeOut" }}
-          className="bg-[#ffffff] rounded-3xl p-7 sm:p-9"
+          key={shakeKey}
+          initial={false}
+          animate={shakeKey ? shakeAnim : { x: 0 }}
+          className="bg-[#ffffff] rounded-2xl sm:rounded-3xl p-5 sm:p-9"
         >
           <AnimatePresence mode="wait">
             {submitted ? (
-              /* ---- Success state ---- */
+              /* ---- Success State ---- */
               <motion.div
                 key="success"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="py-10 text-center"
+                className="py-8 text-center"
               >
                 <motion.div
                   initial={{ scale: 0 }}
@@ -294,7 +345,7 @@ export default function SignupForm() {
                     damping: 16,
                     delay: 0.1,
                   }}
-                  className="w-16 h-16 rounded-full bg-[#0a0a0a] mx-auto mb-5 flex items-center justify-center"
+                  className="w-16 h-16 rounded-2xl bg-[#0a0a0a] mx-auto mb-5 flex items-center justify-center shadow-lg shadow-[#0a0a0a]/20"
                 >
                   <svg
                     width="26"
@@ -302,26 +353,29 @@ export default function SignupForm() {
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="#ffffff"
-                    strokeWidth="2.5"
+                    strokeWidth="2.8"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
                     <path d="M20 6L9 17l-5-5" />
                   </svg>
                 </motion.div>
-                <h2 className="text-2xl font-bold text-[#0a0a0a] tracking-tight">
+                <h2 className="text-xl sm:text-2xl font-bold text-[#0a0a0a] tracking-tight">
                   Welcome to the circle
                 </h2>
-                <p className="text-[#737373] text-md mt-2">
-                  Your account has been created successfully, we've sent an otp to your email for verification.
+                <p className="text-[#737373] text-[13px] sm:text-sm mt-2 leading-relaxed">
+                  Your account has been created successfully. We’ve sent a verification code to{" "}
+                  <span className="font-semibold text-[#0a0a0a]">{formData.email}</span>.
                 </p>
-                <Link
-                  to="/OtpVerification"
-                  state={{ accountData: formData }}
-                  className="mt-6 text-sm font-semibold text-[#0a0a0a] underline underline-offset-4 hover:text-[#737373] transition-colors"
-                >
-                  Verify your email
-                </Link>
+                <div className="mt-7">
+                  <Link
+                    to="/OtpVerification"
+                    state={{ accountData: formData }}
+                    className="w-full inline-flex items-center justify-center bg-[#0a0a0a] text-white font-semibold text-[15px] py-3.5 rounded-xl hover:bg-[#1f1f1f] transition-colors shadow-lg shadow-[#0a0a0a]/20"
+                  >
+                    Verify your email
+                  </Link>
+                </div>
               </motion.div>
             ) : (
               <motion.form
@@ -333,25 +387,70 @@ export default function SignupForm() {
                 onSubmit={handleSubmit}
                 noValidate
               >
-                <motion.div variants={item} className="mb-7">
-                  <h1 className="text-2xl font-bold text-[#0a0a0a] tracking-tight">
+                <motion.div variants={item} className="mb-6">
+                  <h1 className="text-xl sm:text-2xl font-bold text-[#0a0a0a] tracking-tight">
                     Create your account
                   </h1>
-                  <p className="text-[#737373] text-sm mt-1">
+                  <p className="text-[#737373] text-[13px] sm:text-sm mt-1">
                     Join the Locked In Circle community in under a minute.
                   </p>
                 </motion.div>
+
+                {/* Global Alert / Unverified Conflict Banner */}
+                <AnimatePresence>
+                  {(globalError || isUnverifiedConflict) && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, height: 0 }}
+                      animate={{ opacity: 1, y: 0, height: "auto" }}
+                      exit={{ opacity: 0, y: -8, height: 0 }}
+                      className="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-900 text-[13px]"
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#dc2626"
+                          strokeWidth="2.2"
+                          className="shrink-0 mt-0.5"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="8" x2="12" y2="12" />
+                          <circle cx="12" cy="16" r="0.5" fill="#dc2626" />
+                        </svg>
+                        <div className="flex-1">
+                          <p className="font-medium text-[#991b1b]">
+                            {globalError}
+                          </p>
+                          {isUnverifiedConflict && (
+                            <div className="mt-2">
+                              <Link
+                                to="/OtpVerification"
+                                state={{ accountData: formData }}
+                                className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#dc2626] text-white px-3 py-1.5 rounded-lg hover:bg-[#b91c1c] transition-colors shadow-sm"
+                              >
+                                Complete email verification &rarr;
+                              </Link>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Full Name */}
                 <motion.div variants={item}>
                   <Field label="Full Name" error={errors.fullName}>
                     <input
+                      ref={nameRef}
                       type="text"
                       name="fullName"
                       value={formData.fullName}
                       onChange={handleChange}
                       placeholder="John Doe"
-                      className={inputClass}
+                      className={getInputClass(errors.fullName)}
                     />
                   </Field>
                 </motion.div>
@@ -360,12 +459,13 @@ export default function SignupForm() {
                 <motion.div variants={item}>
                   <Field label="Email Address" error={errors.email}>
                     <input
+                      ref={emailRef}
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
                       placeholder="you@example.com"
-                      className={inputClass}
+                      className={getInputClass(errors.email)}
                     />
                   </Field>
                 </motion.div>
@@ -373,19 +473,20 @@ export default function SignupForm() {
                 {/* Password */}
                 <motion.div variants={item}>
                   <Field label="Password" error={errors.password}>
-                    <div className="relative">
+                    <div className="relative flex items-center">
                       <input
+                        ref={passwordRef}
                         type={showPassword ? "text" : "password"}
                         name="password"
                         value={formData.password}
                         onChange={handleChange}
                         placeholder="••••••••"
-                        className={`${inputClass} pr-12`}
+                        className={`${getInputClass(errors.password)} pr-12`}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#737373] hover:text-[#0a0a0a] transition-colors"
+                        className="absolute right-3.5 text-[#737373] hover:text-[#0a0a0a] transition-colors p-1"
                         aria-label={
                           showPassword ? "Hide password" : "Show password"
                         }
@@ -395,8 +496,8 @@ export default function SignupForm() {
                     </div>
                     {/* Strength meter */}
                     {formData.password && (
-                      <div className="mt-2">
-                        <div className="flex gap-1">
+                      <div className="mt-2.5">
+                        <div className="flex gap-1.5">
                           {[1, 2, 3, 4].map((i) => (
                             <div
                               key={i}
@@ -424,19 +525,20 @@ export default function SignupForm() {
                     label="Confirm Password"
                     error={errors.confirmPassword}
                   >
-                    <div className="relative">
+                    <div className="relative flex items-center">
                       <input
+                        ref={confirmRef}
                         type={showConfirm ? "text" : "password"}
                         name="confirmPassword"
                         value={formData.confirmPassword}
                         onChange={handleChange}
                         placeholder="••••••••"
-                        className={`${inputClass} pr-12`}
+                        className={`${getInputClass(errors.confirmPassword)} pr-12`}
                       />
                       <button
                         type="button"
                         onClick={() => setShowConfirm(!showConfirm)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#737373] hover:text-[#0a0a0a] transition-colors"
+                        className="absolute right-3.5 text-[#737373] hover:text-[#0a0a0a] transition-colors p-1"
                         aria-label={
                           showConfirm ? "Hide password" : "Show password"
                         }
@@ -450,12 +552,15 @@ export default function SignupForm() {
                 {/* Level */}
                 <motion.div variants={item}>
                   <Field label="Current Academic Level" error={errors.level}>
-                    <div className="relative">
+                    <div className="relative flex items-center">
                       <select
+                        ref={levelRef}
                         name="level"
                         value={formData.level}
                         onChange={handleChange}
-                        className={`${inputClass} appearance-none cursor-pointer ${!formData.level ? "text-[#a3a3a3]" : ""}`}
+                        className={`${getInputClass(errors.level)} appearance-none cursor-pointer ${
+                          !formData.level ? "text-[#a3a3a3]" : ""
+                        }`}
                       >
                         <option value="" disabled>
                           Select your level
@@ -470,7 +575,7 @@ export default function SignupForm() {
                           </option>
                         ))}
                       </select>
-                      <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#737373]">
+                      <div className="pointer-events-none absolute right-4 text-[#737373]">
                         <svg
                           width="15"
                           height="15"
@@ -490,12 +595,13 @@ export default function SignupForm() {
                 <motion.div variants={item}>
                   <Field label="Department" error={errors.department}>
                     <input
+                      ref={deptRef}
                       type="text"
                       name="department"
                       value={formData.department}
                       onChange={handleChange}
                       placeholder="e.g. History & International Studies"
-                      className={inputClass}
+                      className={getInputClass(errors.department)}
                     />
                   </Field>
                 </motion.div>
@@ -508,24 +614,25 @@ export default function SignupForm() {
                     error={errors.phone}
                   >
                     <input
+                      ref={phoneRef}
                       type="tel"
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
                       placeholder="+234 801 234 5678"
-                      className={inputClass}
+                      className={getInputClass(errors.phone)}
                     />
                   </Field>
                 </motion.div>
 
                 {/* Submit */}
-                <motion.div variants={item} className="mt-2">
+                <motion.div variants={item} className="mt-3">
                   <motion.button
                     type="submit"
                     disabled={isSubmitting}
                     whileHover={{ scale: isSubmitting ? 1 : 1.01 }}
                     whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
-                    className="w-full bg-[#0a0a0a] text-[#ffffff] font-semibold text-sm py-3.5 rounded-xl hover:bg-[#1f1f1f] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-[#0a0a0a]/10"
+                    className="w-full bg-[#0a0a0a] text-[#ffffff] font-semibold text-[15px] py-3.5 rounded-xl hover:bg-[#1f1f1f] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-[#0a0a0a]/20"
                   >
                     <AnimatePresence mode="wait">
                       {isSubmitting ? (
@@ -577,12 +684,12 @@ export default function SignupForm() {
                   className="text-center text-[13px] text-[#737373] mt-6"
                 >
                   Already have an account?{" "}
-                  <a
-                    href="/login"
-                    className="text-[#0a0a0a] font-semibold hover:underline underline-offset-4 transition-colors"
+                  <Link
+                    to="/signin"
+                    className="text-[#0a0a0a] font-semibold underline underline-offset-4 hover:text-[#737373] transition-colors"
                   >
                     Log in
-                  </a>
+                  </Link>
                 </motion.p>
               </motion.form>
             )}
@@ -593,7 +700,7 @@ export default function SignupForm() {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
+          transition={{ delay: 0.5 }}
           className="text-center text-[11px] text-[#a3a3a3] mt-6 flex items-center justify-center gap-1.5"
         >
           <svg

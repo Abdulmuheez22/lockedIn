@@ -42,3 +42,18 @@ export const signInSchema = z.object({
 export const resendOtpSchema = z.object({
   email
 })
+
+export const forgetPasswordSchema = z.object({
+  email
+})
+
+export const forgetPassword2Schema = z.object({
+  email,
+  otp
+})
+
+export const resetPasswordSchema = z.object({
+  email,
+  otp,
+  password
+})

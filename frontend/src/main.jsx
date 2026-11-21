@@ -21,10 +21,12 @@ const router = createBrowserRouter([
     element: <App />,
     children: [
       { index: true, element: <SignupForm /> },
-      {path: "signin", element: <SignIn />},
-      // { path: "signup", element: <signupForm /> },
-      {path: "forgotpassword", element: <ForgotPassword />},
+      { path: "register", element: <SignupForm /> },
+      { path: "signin", element: <SignIn /> },
+      { path: "login", element: <SignIn />  },
+      { path: "forgot-password", element: <ForgotPassword /> },
       { path: "OtpVerification", element: <OtpVerification /> },
+      { path: "otp-verification", element: <OtpVerification /> },
     ],
   },
 ]);

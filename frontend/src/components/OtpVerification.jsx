@@ -8,7 +8,7 @@ import React, {
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router";
 import { useMutation } from "@tanstack/react-query";
-import { verifyOtp } from "../services/api.services";
+import { resendOtp, verifyOtp } from "../services/api.services";
 
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 60;
@@ -96,6 +96,23 @@ export default function OtpVerification() {
   const inputsRef = useRef([]);
   const submitRef = useRef(false);
 
+  const resendMutation = useMutation({
+    mutationFn: resendOtp,
+    onSuccess: (data) => {
+      setCooldown(RESEND_SECONDS);
+      setInfo(data?.message || "A new code has been sent.");
+      setError("");
+      setDigits(Array(OTP_LENGTH).fill(""));
+      setTimeout(() => focusBox(0), 60);
+    },
+    onError: (err) => {
+      setError(
+        err.response?.data?.message ||
+          "Couldn't resend the code. Please try again.",
+      );
+    },
+  });
+
   /* ------- URL params ------- */
   const params = new URLSearchParams(window.location.search);
   const accountData = location.state?.accountData ?? {};
@@ -149,7 +166,7 @@ export default function OtpVerification() {
     onSuccess: (data) => {
       console.log("Email verified Successfully:", data);
       setStatus("success");
-      // redirect, show toast, etc.
+      setTimeout(() => navigate("/signin"), 1200);
     },
     onError: (error) => {
       console.error("OTP verification failed:", error);
@@ -205,12 +222,8 @@ export default function OtpVerification() {
   }, [cooldown]);
 
   const handleResend = () => {
-    // TODO: call your resend API here
-    setCooldown(RESEND_SECONDS);
-    setInfo("A new code has been sent.");
-    setError("");
-    setDigits(Array(OTP_LENGTH).fill(""));
-    focusBox(0);
+    if (resendMutation.isPending) return;
+    resendMutation.mutate({ email });
   };
 
   /* ------- input handlers ------- */

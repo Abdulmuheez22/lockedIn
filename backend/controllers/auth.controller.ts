@@ -4,6 +4,9 @@ import {
   otpSchema,
   signInSchema,
   resendOtpSchema,
+  forgetPasswordSchema,
+  forgetPassword2Schema,
+  resetPasswordSchema,
 } from "../utils/zodshema.js";
 import { db } from "../src/index.js";
 import { usersTable } from "../src/db/schema.js";
@@ -60,14 +63,28 @@ export const signUp = async (req: Request, res: Response) => {
     const hashedOtp = await passwordHasher(otp);
 
     const otpLifeSpan = 10 * 60 * 1000; // this is equivalent to 10 min in calculation
-    function createTokenPair(user: { id: string; email: string }) {
-      return {
-        accessToken: generateAccessToken(user),
-        refreshToken: generateRefreshToken(user),
-      };
-    }
+    // function createTokenPair(user: { id: string; email: string }) {
+    //   return {
+    //     accessToken: generateAccessToken(user),
+    //     refreshToken: generateRefreshToken(user),
+    //   };
+    // }
     const sentAt = new Date();
+    
     const expireAt = new Date(sentAt.getTime() + otpLifeSpan);
+    
+    try {
+      await sendOtp(validatedRequest.data.email, firstName, otp);
+    } catch (error) {
+      console.error("Signup OTP email failed:", {
+        message: error instanceof Error ? error.message : String(error),
+      });
+      return res.status(503).json({
+        code: "OTP_EMAIL_SEND_FAILED",
+        message:
+          "We couldn't send your verification email. Please try signing up again in a moment.",
+      });
+    }
 
     await db.insert(usersTable).values({
       fullName: validatedRequest.data.fullName,
@@ -82,9 +99,9 @@ export const signUp = async (req: Request, res: Response) => {
       isEmailVerified: false,
     });
 
-    // send otp here.
-    await sendOtp(validatedRequest.data.email, firstName, otp);
+
     console.log("Account created");
+    
     return res.status(201).json({
       message:
         "Your account have be created Successfully!, Check your email for verification OTP",
@@ -151,8 +168,6 @@ export const otpVerification = async (req: Request, res: Response) => {
       .update(usersTable)
       .set({ isEmailVerified: true, otp: null, expiresAt: null })
       .where(eq(usersTable.email, validatedEmail));
-
-    console.log(userData);
 
     const accessToken = generateAccessToken(userData);
 
@@ -295,9 +310,9 @@ export const resendOtp = async (req: Request, res: Response) => {
 };
 
 
-export const forgetPassword = async (req: Request, res: Response) => {
+export const forgetPassword1 = async (req: Request, res: Response) => {
   try {
-    const request = resendOtpSchema.safeParse(req.body);
+    const request = forgetPasswordSchema.safeParse(req.body);
 
     if (!request.success) {
       return res.status(400).json({ message: "Invalid email" });
@@ -308,7 +323,7 @@ export const forgetPassword = async (req: Request, res: Response) => {
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email));
 
     if (!user) {
-      return res.status(200).json({ message: "User not found" });
+      return res.status(404).json({ message: "User not found" });
     }
 
     const COOLDOWN_MS = 60 * 1000;
@@ -321,10 +336,10 @@ export const forgetPassword = async (req: Request, res: Response) => {
 
     const hashedOtp = await passwordHasher(otp);
 
-    // 7. Save reset fields
     await db.update(usersTable).set({
         otp: hashedOtp,
         lastOtpSentAt: new Date(),
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
       }).where(eq(usersTable.id, user.id));
 
     const firstName = user.fullName.trim().split(/\s+/)[0] ?? "";
@@ -337,3 +352,89 @@ export const forgetPassword = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Error processing request" });
   }
 };
+
+
+export const forgetPassword2 = async (req: Request, res: Response) => {
+  try {
+      const request = forgetPassword2Schema.safeParse(req.body);
+
+      if (!request.success) {
+          return res.status(400).json({ message: "Invalid request" });
+      }
+
+      const { email, otp } = request.data;
+
+      const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email));
+
+      if (!user) {
+          return res.status(404).json({ message: "User not found" });
+      }
+
+      if (!user.otp) {
+          return res.status(400).json({ message: "No OTP found for this user" });
+      }
+
+      if (!user.expiresAt || new Date() > user.expiresAt) {
+            return res.status(400).json({ message: "OTP has expired" });
+      }
+
+      const isOtpValid = await verifyPassword(otp, user.otp);
+
+      if (!isOtpValid) {
+          return res.status(400).json({ message: "Invalid OTP" });
+      }
+
+      return res.status(200).json({ message: "OTP verified successfully" });
+  } catch (error) {
+    console.log("forgetPassword2 Error: ", error)
+    res.status(500).json({ message: "Error proccessing request at forgetPassword step 2" })
+  }
+}
+
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const request = resetPasswordSchema.safeParse(req.body);
+
+    if (!request.success) {
+      console.log("resetPassword zod error: ", request.error);
+      return res.status(400).json({ message: "Invalid request" });
+    }
+
+    const { email, password, otp } = request.data;
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email));
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!user.otp) {
+      return res.status(400).json({ message: "Verification code is required" });
+    }
+
+    if (!user.expiresAt || new Date() > user.expiresAt) {
+      return res.status(400).json({ message: "OTP has expired" });
+    }
+
+    const isOtpValid = await verifyPassword(otp, user.otp);
+    if (!isOtpValid) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    const hashedPassword = await passwordHasher(password);
+
+    await db.update(usersTable).set({
+      password: hashedPassword,
+      otp: null,
+      expiresAt: null,
+      lastOtpSentAt: null,
+    }).where(eq(usersTable.id, user.id));
+
+    return res.status(200).json({ message: "Password reset successfully" });
+    
+  } catch (error) {
+    console.log("resetPassword Error: ", error)
+    res.status(500).json({ message: "Error proccessing request at resetPassword step" })
+    
+  }
+}
