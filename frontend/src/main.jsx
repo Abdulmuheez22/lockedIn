@@ -9,6 +9,7 @@ import SignupForm from "./components/SignupForm.jsx"
 import OtpVerification from "./components/OtpVerification.jsx";
 import SignIn from "./components/SignIn.jsx";
 import ForgotPassword from "./components/ForgotPassword.jsx";
+import Dashboard from "./components/Dashboard.jsx";
 
 
 
@@ -27,6 +28,7 @@ const router = createBrowserRouter([
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "OtpVerification", element: <OtpVerification /> },
       { path: "otp-verification", element: <OtpVerification /> },
+      { path: "dashboard", element: <Dashboard /> },
     ],
   },
 ]);

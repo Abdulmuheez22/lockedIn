@@ -1,0 +1,725 @@
+{
+  "type": "base",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "4b22669a-ae0b-4d4b-8591-70640b3100a3",
+  "prevIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "challenge"
+      ],
+      "writes": [
+        "s|enum|public.challenge",
+        "n|enum|public.challenge",
+        "e|enum|public.challenge",
+        "n|type|public.challenge"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "emotionalState"
+      ],
+      "writes": [
+        "s|enum|public.emotionalState",
+        "n|enum|public.emotionalState",
+        "e|enum|public.emotionalState",
+        "n|type|public.emotionalState"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "focusLevel"
+      ],
+      "writes": [
+        "s|enum|public.focusLevel",
+        "n|enum|public.focusLevel",
+        "e|enum|public.focusLevel",
+        "n|type|public.focusLevel"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "planCompleted"
+      ],
+      "writes": [
+        "s|enum|public.planCompleted",
+        "n|enum|public.planCompleted",
+        "e|enum|public.planCompleted",
+        "n|type|public.planCompleted"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "studyMethod"
+      ],
+      "writes": [
+        "s|enum|public.studyMethod",
+        "n|enum|public.studyMethod",
+        "e|enum|public.studyMethod",
+        "n|type|public.studyMethod"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "studyTechnique"
+      ],
+      "writes": [
+        "s|enum|public.studyTechnique",
+        "n|enum|public.studyTechnique",
+        "e|enum|public.studyTechnique",
+        "n|type|public.studyTechnique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "understanding"
+      ],
+      "writes": [
+        "s|enum|public.understanding",
+        "n|enum|public.understanding",
+        "e|enum|public.understanding",
+        "n|type|public.understanding"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "dpf"
+      ],
+      "writes": [
+        "s|tbl|public.dpf",
+        "n|tbl|public.dpf",
+        "e|tbl|public.dpf",
+        "n|rel|public.dpf",
+        "n|type|public.dpf",
+        "n|rel|public.dpf_pkey",
+        "n|rel|public.dpf_user_date_unique"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.studyMethod",
+        "n|enum|public.studyTechnique",
+        "n|enum|public.focusLevel",
+        "n|enum|public.emotionalState",
+        "n|enum|public.understanding",
+        "n|enum|public.challenge"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "users"
+      ],
+      "writes": [
+        "s|tbl|public.users",
+        "n|tbl|public.users",
+        "e|tbl|public.users",
+        "n|rel|public.users",
+        "n|type|public.users",
+        "n|rel|public.users_pkey",
+        "n|rel|public.users_email_key"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "dpf"
+      ],
+      "writes": [
+        "s|fk|public.dpf.dpf_userId_users_id_fkey",
+        "n|fk|public.dpf.dpf_userId_users_id_fkey",
+        "e|fk|public.dpf.dpf_userId_users_id_fkey",
+        "n|con|public.dpf.dpf_userId_users_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.dpf",
+        "n|sch|public",
+        "n|tbl|public.users",
+        "n|sch|public",
+        "n|col|public.dpf.userId",
+        "n|col|public.users.id",
+        "e|uniqueness|public.users.id"
+      ]
+    }
+  ],
+  "ddl": [
+    {
+      "schema": "public",
+      "name": "dpf",
+      "isRlsEnabled": false,
+      "entityType": "tables"
+    },
+    {
+      "schema": "public",
+      "name": "users",
+      "isRlsEnabled": false,
+      "entityType": "tables"
+    },
+    {
+      "schema": "public",
+      "name": "challenge",
+      "values": [
+        "Time Management",
+        "Distractions",
+        "Lack of Motivation",
+        "Difficulty Understanding Material",
+        "Procrastination",
+        "Burnout",
+        "Nothing",
+        "unavailability of material"
+      ],
+      "entityType": "enums"
+    },
+    {
+      "schema": "public",
+      "name": "emotionalState",
+      "values": [
+        "Motivated",
+        "Neutral",
+        "Frustrated",
+        "Anxious",
+        "Excited",
+        "Bored"
+      ],
+      "entityType": "enums"
+    },
+    {
+      "schema": "public",
+      "name": "focusLevel",
+      "values": [
+        "Very focused",
+        "Somewhat focused",
+        "Distracted"
+      ],
+      "entityType": "enums"
+    },
+    {
+      "schema": "public",
+      "name": "planCompleted",
+      "values": [
+        "Yes",
+        "Partially",
+        "No"
+      ],
+      "entityType": "enums"
+    },
+    {
+      "schema": "public",
+      "name": "studyMethod",
+      "values": [
+        "Reading",
+        "Note Taking",
+        "Revision",
+        "Practice",
+        "Watching Videos",
+        "Group Study",
+        "Teaching Others"
+      ],
+      "entityType": "enums"
+    },
+    {
+      "schema": "public",
+      "name": "studyTechnique",
+      "values": [
+        "Pomodoro",
+        "Active Recall",
+        "Spaced Repetition",
+        "Feynman Technique",
+        "Mind Mapping",
+        "SQ3R Method",
+        "Cornell Note-Taking System",
+        "Self-Explanation"
+      ],
+      "entityType": "enums"
+    },
+    {
+      "schema": "public",
+      "name": "understanding",
+      "values": [
+        "Very clear",
+        "Somewhat clear",
+        "Confused",
+        "Lost"
+      ],
+      "entityType": "enums"
+    },
+    {
+      "schema": "public",
+      "table": "dpf",
+      "name": "id",
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "dpf",
+      "name": "userId",
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "dpf",
+      "name": "entryDate",
+      "type": "date",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "dpf",
+      "name": "studyMinutes",
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "dpf",
+      "name": "coursesStudied",
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 1,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "dpf",
+      "name": "studyMethods",
+      "type": "studyMethod",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 1,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "dpf",
+      "name": "studyTechniques",
+      "type": "studyTechnique",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 1,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "dpf",
+      "name": "focusLevel",
+      "type": "focusLevel",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "dpf",
+      "name": "emotionalState",
+      "type": "emotionalState",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "dpf",
+      "name": "understanding",
+      "type": "understanding",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "dpf",
+      "name": "challengeFaced",
+      "type": "challenge",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "dpf",
+      "name": "whatWentWell",
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "dpf",
+      "name": "whatToImprove",
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "dpf",
+      "name": "nextDayPlan",
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "dpf",
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "name": "id",
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "name": "fullName",
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "name": "email",
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "name": "role",
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'member'",
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "name": "password",
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "name": "level",
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "name": "department",
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "name": "phoneNumber",
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "name": "otp",
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "name": "expires_at",
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "name": "last_otp_sent_at",
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "name": "isEmailVerified",
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "name": "refreshToken",
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "entityType": "columns"
+    },
+    {
+      "schema": "public",
+      "table": "dpf",
+      "name": "dpf_userId_users_id_fkey",
+      "nameExplicit": false,
+      "columns": [
+        "userId"
+      ],
+      "schemaTo": "public",
+      "tableTo": "users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "entityType": "fks"
+    },
+    {
+      "schema": "public",
+      "table": "dpf",
+      "name": "dpf_pkey",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "name": "users_pkey",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "schema": "public",
+      "table": "dpf",
+      "name": "dpf_user_date_unique",
+      "nameExplicit": true,
+      "columns": [
+        "userId",
+        "entryDate"
+      ],
+      "nullsNotDistinct": false,
+      "entityType": "uniques"
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "name": "users_email_key",
+      "nameExplicit": false,
+      "columns": [
+        "email"
+      ],
+      "nullsNotDistinct": false,
+      "entityType": "uniques"
+    }
+  ]
+}
