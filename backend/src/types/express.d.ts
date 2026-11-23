@@ -1,9 +1,8 @@
-import type { User } from "../db/schema.js";
-export type SafeUser = Omit<User, "password" | "refreshToken">;
+export type AuthenticatedUser = { id: string };
 declare global {
  namespace Express {
  interface Request {
- user?: SafeUser;
+ user?: AuthenticatedUser;
  }
  }
 }

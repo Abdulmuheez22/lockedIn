@@ -39,7 +39,7 @@ function verify(token: string, secret: string): TokenPayload {
  typeof decoded.sub !== "string" ||
  !UUID_RE.test(decoded.sub)
  ) {
-    console.log("invalid token payload");
+    throw new Error("Invalid token payload");
  }
  return decoded as TokenPayload;
 }

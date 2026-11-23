@@ -35,14 +35,30 @@ export async function verifyJWT( req: Request, res: Response, next: NextFunction
     res.status(401).json({ message: "Invalid or expired token" });
     return;
   }
-  // const [user] = await db.select({ id: usersTable.id, email: usersTable.email}) .from(usersTable) .where(eq(usersTable.id, userId)) .limit(1);
 
-  // if (!user) {
-  //   res.status(401).json({ message: "Invalid or expired token" });
-  //   return;
-  // }
+  try {
+    const [user] = await db
+      .select({
+        id: usersTable.id,
+        email: usersTable.email,
+        fullName: usersTable.fullName,
+        role: usersTable.role,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId))
+      .limit(1);
 
-  (req as Request & { id: string }).id = userId;
+    if (!user) {
+      res.status(401).json({ message: "Invalid or expired token" });
+      return;
+    }
+
+    req.user = user;
+  } catch (error) {
+    console.error("Access-token user lookup failed:", error);
+    res.status(500).json({ message: "Unable to authenticate user" });
+    return;
+  }
 
   next();
 }

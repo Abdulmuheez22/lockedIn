@@ -3,6 +3,7 @@ import {
   signUp,
   otpVerification,
   signIn,
+  refreshSession,
   resendOtp,
   forgetPassword1,
   forgetPassword2,
@@ -16,6 +17,8 @@ auth.post("/signUp", signUp);
 auth.post("/otpVerification", otpVerification);
 
 auth.post("/signIn", signIn);
+
+auth.post("/refresh", refreshSession);
 
 auth.post("/resendOtp", resendOtp);
 

@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { dpfRegistration } from "../../services/api.services.js";
 import {
   Flame,
   BookOpen,
@@ -680,11 +681,14 @@ export default function MemberDashboard() {
   const [submitted, setSubmitted] = useState(false);
   const [touched, setTouched] = useState({});
   const [missingField, setMissingField] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState("");
 
   const update = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setTouched((prev) => ({ ...prev, [key]: true }));
     setMissingField((current) => (current === key ? null : current));
+    setSubmissionError("");
   };
 
   const progress = useMemo(() => {
@@ -696,10 +700,14 @@ export default function MemberDashboard() {
 
   const isValid = progress === 100;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     if (!isValid) {
-      const firstMissing = REQUIRED_KEYS.find((key) => !isFieldValid(key, form));
+      const firstMissing = REQUIRED_KEYS.find(
+        (key) => !isFieldValid(key, form),
+      );
       setMissingField(firstMissing);
       if (firstMissing) {
         window.requestAnimationFrame(() => {
@@ -726,9 +734,24 @@ export default function MemberDashboard() {
       nextDayPlan: form.tomorrowPlan.trim() || null,
     };
 
-    console.log("DPF submit payload:", payload);
-    setStreak((s) => s + 1);
-    setSubmitted(true);
+    setIsSubmitting(true);
+    setSubmissionError("");
+
+    try {
+      await dpfRegistration(payload);
+      setStreak((s) => s + 1);
+      setSubmitted(true);
+    } catch (error) {
+      console.error("DPF submission failed:", error);
+      const message = error?.response?.data?.message;
+      setSubmissionError(
+        typeof message === "string"
+          ? message
+          : "Could not submit the form. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resetForm = () => {
@@ -747,6 +770,7 @@ export default function MemberDashboard() {
     });
     setTouched({});
     setMissingField(null);
+    setSubmissionError("");
     setSubmitted(false);
   };
 
@@ -800,12 +824,30 @@ export default function MemberDashboard() {
   ];
 
   const emotionColors = {
-    Motivated: { selected: "bg-[#0a0a0a] border-[#0a0a0a] text-white", icon: "text-white" },
-    Neutral: { selected: "bg-[#0a0a0a] border-[#0a0a0a] text-white", icon: "text-white" },
-    Frustrated: { selected: "bg-[#0a0a0a] border-[#0a0a0a] text-white", icon: "text-white" },
-    Anxious: { selected: "bg-[#0a0a0a] border-[#0a0a0a] text-white", icon: "text-white" },
-    Excited: { selected: "bg-[#0a0a0a] border-[#0a0a0a] text-white", icon: "text-white" },
-    Bored: { selected: "bg-[#0a0a0a] border-[#0a0a0a] text-white", icon: "text-white" },
+    Motivated: {
+      selected: "bg-[#0a0a0a] border-[#0a0a0a] text-white",
+      icon: "text-white",
+    },
+    Neutral: {
+      selected: "bg-[#0a0a0a] border-[#0a0a0a] text-white",
+      icon: "text-white",
+    },
+    Frustrated: {
+      selected: "bg-[#0a0a0a] border-[#0a0a0a] text-white",
+      icon: "text-white",
+    },
+    Anxious: {
+      selected: "bg-[#0a0a0a] border-[#0a0a0a] text-white",
+      icon: "text-white",
+    },
+    Excited: {
+      selected: "bg-[#0a0a0a] border-[#0a0a0a] text-white",
+      icon: "text-white",
+    },
+    Bored: {
+      selected: "bg-[#0a0a0a] border-[#0a0a0a] text-white",
+      icon: "text-white",
+    },
   };
 
   const understandingOptions = [
@@ -819,11 +861,19 @@ export default function MemberDashboard() {
     { id: "Time Management", label: "Time Management", icon: Clock },
     { id: "Distractions", label: "Distractions", icon: Smartphone },
     { id: "Lack of Motivation", label: "Lack of Motivation", icon: BatteryLow },
-    { id: "Difficulty Understanding Material", label: "Difficulty Understanding Material", icon: HelpCircle },
+    {
+      id: "Difficulty Understanding Material",
+      label: "Difficulty Understanding Material",
+      icon: HelpCircle,
+    },
     { id: "Procrastination", label: "Procrastination", icon: Clock },
     { id: "Burnout", label: "Burnout", icon: BatteryLow },
     { id: "Nothing", label: "Nothing", icon: CheckCircle2 },
-    { id: "unavailability of material", label: "Unavailability of material", icon: HelpCircle },
+    {
+      id: "unavailability of material",
+      label: "Unavailability of material",
+      icon: HelpCircle,
+    },
   ];
 
   const container = {
@@ -1053,7 +1103,9 @@ export default function MemberDashboard() {
                             <button
                               key={minutes}
                               type="button"
-                              onClick={() => update("studyMinutes", String(minutes))}
+                              onClick={() =>
+                                update("studyMinutes", String(minutes))
+                              }
                               className={`
                         px-3.5 py-2 rounded-xl text-xs font-semibold border-[1.5px] transition
                         ${
@@ -1144,11 +1196,12 @@ export default function MemberDashboard() {
                           multi
                           required
                         />
-                        {touched.techniques && !isFieldValid("techniques", form) && (
-                          <p className="mt-2 text-xs font-medium text-[#dc2626]">
-                            Select at least one technique
-                          </p>
-                        )}
+                        {touched.techniques &&
+                          !isFieldValid("techniques", form) && (
+                            <p className="mt-2 text-xs font-medium text-[#dc2626]">
+                              Select at least one technique
+                            </p>
+                          )}
                       </motion.div>
 
                       {/* 6. Focus */}
@@ -1293,24 +1346,38 @@ export default function MemberDashboard() {
 
                       {/* Submit CTA Bar */}
                       <motion.div variants={item} className="pt-4">
+                        {submissionError && (
+                          <p
+                            role="alert"
+                            className="mb-3 text-center text-sm font-medium text-red-600"
+                          >
+                            {submissionError}
+                          </p>
+                        )}
                         <motion.button
                           type="submit"
-                          whileHover={{ scale: isValid ? 1.01 : 1 }}
-                          whileTap={{ scale: isValid ? 0.98 : 1 }}
+                          disabled={!isValid || isSubmitting}
+                          whileHover={{
+                            scale: isValid && !isSubmitting ? 1.01 : 1,
+                          }}
+                          whileTap={{
+                            scale: isValid && !isSubmitting ? 0.98 : 1,
+                          }}
                           className={`
                     w-full py-4 rounded-2xl font-semibold text-base flex items-center justify-center gap-2.5 shadow-xl transition-all duration-200
                     ${
-                      isValid
+                      isValid && !isSubmitting
                         ? "bg-[#0a0a0a] text-white shadow-[#0a0a0a]/25 hover:bg-[#1f1f1f] cursor-pointer"
                         : "bg-[#e5e5e5] text-[#a3a3a3] cursor-not-allowed shadow-none"
                     }
                   `}
                         >
                           <span>
-                            Submit Daily Performance Form (
-                            {Math.round(progress)}%)
+                            {isSubmitting
+                              ? "Submitting..."
+                              : `Submit Daily Performance Form (${Math.round(progress)}%)`}
                           </span>
-                          <ArrowRight className="w-5 h-5" />
+                          {!isSubmitting && <ArrowRight className="w-5 h-5" />}
                         </motion.button>
                         {!isValid && (
                           <p className="text-center text-xs font-medium text-[#737373] mt-3">

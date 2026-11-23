@@ -38,3 +38,13 @@ export const resetPassword = async (data) => {
   const res = await api.post("/auth/resetPassword", data);
   return res.data;
 }
+
+export const dpfRegistration = async (data) => {
+  const res = await api.post("/dpf/reg", data);
+  return res.data;
+}
+
+export const fetchUserData = async () => {
+  const res = await api.get("/dashboard/member/fetchUserData");
+  return res.data;
+}

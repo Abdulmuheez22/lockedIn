@@ -10,6 +10,7 @@ import OtpVerification from "./components/OtpVerification.jsx";
 import SignIn from "./components/SignIn.jsx";
 import ForgotPassword from "./components/ForgotPassword.jsx";
 import Dashboard from "./components/Dashboard.jsx";
+import PulseLoader from "./components/PulseLoader.jsx";
 
 
 
@@ -29,6 +30,7 @@ const router = createBrowserRouter([
       { path: "OtpVerification", element: <OtpVerification /> },
       { path: "otp-verification", element: <OtpVerification /> },
       { path: "dashboard", element: <Dashboard /> },
+      { path: "loading", element: <PulseLoader /> },
     ],
   },
 ]);

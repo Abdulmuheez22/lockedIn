@@ -242,12 +242,75 @@ export const signIn = async (req: Request, res: Response) => {
       .json({
         user: { id: user.id, email: user.email },
         accessToken,
-        refreshToken,
         message: "Logged in successfully",
       });
   } catch (error) {
     console.log("signIn error: ", error);
     return res.status(500).json({ message: "error signing in" });
+  }
+};
+
+export const refreshSession = async (req: Request, res: Response) => {
+  const refreshToken: unknown = req.cookies?.refreshToken;
+
+  if (typeof refreshToken !== "string" || !refreshToken) {
+    res.clearCookie("accessToken", clearCookieOptions);
+    res.clearCookie("refreshToken", clearCookieOptions);
+    res.status(401).json({ message: "Refresh token required" });
+    return;
+  }
+
+  let userId: string;
+
+  try {
+    userId = verifyRefreshToken(refreshToken).sub;
+  } catch {
+    res.clearCookie("accessToken", clearCookieOptions);
+    res.clearCookie("refreshToken", clearCookieOptions);
+    res.status(401).json({ message: "Invalid or expired refresh token" });
+    return;
+  }
+
+  try {
+    const [user] = await db
+      .select({
+        id: usersTable.id,
+        email: usersTable.email,
+        fullName: usersTable.fullName,
+        role: usersTable.role,
+        refreshToken: usersTable.refreshToken,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId))
+      .limit(1);
+
+    if (!user || user.refreshToken !== hashToken(refreshToken)) {
+      res.clearCookie("accessToken", clearCookieOptions);
+      res.clearCookie("refreshToken", clearCookieOptions);
+      res.status(401).json({ message: "Invalid or expired refresh token" });
+      return;
+    }
+
+    const accessToken = generateAccessToken(user);
+    const rotatedRefreshToken = generateRefreshToken(user);
+
+    await db
+      .update(usersTable)
+      .set({ refreshToken: hashToken(rotatedRefreshToken) })
+      .where(eq(usersTable.id, user.id));
+
+    res
+      .status(200)
+      .cookie("accessToken", accessToken, accessCookieOptions)
+      .cookie("refreshToken", rotatedRefreshToken, refreshCookieOptions)
+      .json({
+        message: "Session refreshed",
+        user: { id: user.id, email: user.email },
+        accessToken,
+      });
+  } catch (error) {
+    console.error("refreshSession error:", error);
+    res.status(500).json({ message: "Unable to refresh session" });
   }
 };
 

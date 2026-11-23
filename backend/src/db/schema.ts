@@ -17,50 +17,7 @@ export const usersTable = pgTable("users", {
   refreshToken: varchar({ length: 255 }),
 });
 
-// export const studyTechniqueEnum = pgEnum('studyTechniques', ["Pomodoro", "Active Recall", "Spaced Repetition", "Feynman Technique", "Mind Mapping", "SQ3R Method", "Cornell Note-Taking System", "Interleaving", "Self-Explanation", "Dual Coding"]);
 
-// export const studyMethodsEnum = pgEnum('studyMethods', ["Reading", "Note Taking", "Revision", "Practice", "Watching Videos", "Group Study", "Teaching Others"]);
-
-// export const focusLevelEnum = pgEnum('focusLevel', ["Very focused", "Somewhat focused", "Distracted"]);
-
-// export const emotionalStateEnum = pgEnum('emotionalState', ["Motivated", "Neutral", "Frustrated", "Anxious", "Excited", "Bored"]);
-
-// export const understandingEnum = pgEnum('understanding', ["Very clear", "Somewhat clear", "Confused", "Lost"]);
-
-// export const challengedFacedEnum = pgEnum('challengedFaced', ["Time Management", "Distractions", "Lack of Motivation", "Difficulty Understanding Material", "Procrastination", "Burnout", "Nothing"]);
-
-// export const dpfTable = pgTable("dpf", {
-
-//   id: uuid().primaryKey().defaultRandom(),
-
-//   userId: varchar({ length: 255 }).notNull(),
-
-//   studyTime: varchar({ length: 255 }).notNull(),
-
-//   coursesStudied: varchar({ length: 255 }).notNull(),
-
-//   studyMethods: studyMethodsEnum('studyMethods').notNull().array(),
-
-//   studyTechniques: studyTechniqueEnum('studyTechniques').notNull().array(),
-
-//   focusLevel: focusLevelEnum('focusLevel').notNull().array(),
-
-//   emotionalState: emotionalStateEnum('emotionalState').notNull().array(),
-
-//   understanding: understandingEnum('understanding').notNull().array(),
-
-//   challengesFaced: challengedFacedEnum('challengesFaced').notNull().array(),
-
-//   whatWentWell: varchar({ length: 5000 }).notNull(),
-
-//   whatToImprove: varchar({ length: 5000 }).notNull(),
-
-//   nextDayPlan: varchar({ length: 5000 }),
-
-//   entryDay
-
-//   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-// });
 
 export const studyTechniqueEnum = pgEnum("studyTechnique", [
   "Pomodoro",
