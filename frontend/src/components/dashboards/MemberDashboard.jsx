@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { dpfRegistration } from "../../services/api.services.js";
+import { dpfRegistration, fetchUserData } from "../../services/api.services.js";
+import PulseLoader from "../PulseLoader.jsx";
 import {
   Flame,
   BookOpen,
@@ -26,12 +27,6 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-const mockUser = {
-  name: "Abdulmuheez",
-  department: "Computer Science",
-  level: "300 Level",
-};
-
 const REQUIRED_KEYS = [
   "studyMinutes",
   "topics",
@@ -54,6 +49,15 @@ const todayFormatted = () =>
     month: "long",
     day: "numeric",
   });
+
+const getInitials = (name = "") =>
+  name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join("") || "M";
 
 const isFieldValid = (key, form) => {
   switch (key) {
@@ -629,6 +633,42 @@ const CheckIcon = () => (
 export default function MemberDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeNav, setActiveNav] = useState("overview");
+  const [userData, setUserData] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [userDataError, setUserDataError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadUserData = async () => {
+      try {
+        const response = await fetchUserData();
+        if (!response?.userData) {
+          throw new Error("User details were not returned by the server.");
+        }
+        if (isMounted) setUserData(response.userData);
+      } catch (error) {
+        if (isMounted) {
+          setUserDataError(
+            error?.response?.data?.message ||
+              error?.message ||
+              "Unable to load your profile.",
+          );
+        }
+      } finally {
+        if (isMounted) setIsLoadingUser(false);
+      }
+    };
+
+    loadUserData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const displayName =
+    userData?.fullname || (isLoadingUser ? "Loading profile..." : "Member");
+  const initials = getInitials(userData?.fullname);
 
   // DPF Form Local State
   const [dpfTask, setDpfTask] = useState("");
@@ -889,6 +929,16 @@ export default function MemberDashboard() {
     show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
   };
 
+  if (isLoadingUser) {
+    return (
+      <PulseLoader
+        message="Loading your dashboard..."
+        subtext="Fetching your profile details"
+        showSteps={false}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen w-full bg-[#FFFFFF] text-[#050315] flex flex-col md:flex-row font-sans antialiased selection:bg-[#0a0a0a] selection:text-white">
       {/* ---------- Mobile Header ---------- */}
@@ -911,7 +961,7 @@ export default function MemberDashboard() {
           </div>
         </div>
         <div className="w-8 h-8 rounded-full bg-[#0a0a0a] text-white font-bold text-xs grid place-items-center shadow-sm">
-          AM
+          {initials}
         </div>
       </header>
 
@@ -999,15 +1049,20 @@ export default function MemberDashboard() {
         <div className="p-4 border-t border-[#f0f0f0] m-3 rounded-2xl bg-[#fafafa]">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-[#0a0a0a] text-white font-bold text-xs grid place-items-center shrink-0 shadow-sm">
-              AM
+              {initials}
             </div>
             <div className="overflow-hidden">
               <p className="text-xs font-bold text-[#0a0a0a] truncate">
-                Abdulmuheez
+                {displayName}
               </p>
               <p className="text-[11px] text-[#737373] truncate">
-                Staff Engineer
+                {userData?.role || "Member"}
               </p>
+              {userData?.email && (
+                <p className="text-[10px] text-[#737373] truncate">
+                  {userData.email}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -1024,8 +1079,21 @@ export default function MemberDashboard() {
                 : `${activeNav} Dashboard`}
             </h1>
             <p className="text-xs text-[#737373] mt-0.5">
-              Welcome back, Abdulmuheez. Here is your operational overview.
+              Welcome back, {displayName}. Here is your operational overview.
             </p>
+            {userData && (
+              <p className="text-[11px] text-[#737373] mt-1">
+                {[
+                  // userData.role,
+                  // userData.department,
+                  // userData.level,
+                  // userData.email,
+                  // userData.phoneNumber,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -1043,11 +1111,19 @@ export default function MemberDashboard() {
 
         {/* Dynamic Full Screen Content Container */}
         <div className="flex-1 p-4 sm:p-8 space-y-6">
+          {userDataError && (
+            <p
+              role="alert"
+              className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+              Unable to load your profile: {userDataError}
+            </p>
+          )}
           {activeNav === "dpf" ? (
             /* ==================== DPF VIEW ==================== */
             <div className="min-h-screen bg-[#FAFAFA] text-[#050315] font-sans antialiased flex flex-col">
               <StreakHeader
-                name={mockUser.name}
+                name={displayName}
                 streak={streak}
                 progress={progress}
               />
@@ -1060,10 +1136,10 @@ export default function MemberDashboard() {
                     {/* User metadata badge */}
                     <div className="mb-6 flex items-center gap-2.5 text-xs text-[#737373] bg-white px-4 py-3 rounded-2xl border border-[#eaeaea]">
                       <span className="font-bold text-[#0a0a0a]">
-                        {mockUser.department}
+                        {userData?.department || "Department unavailable"}
                       </span>
                       <span>·</span>
-                      <span>{mockUser.level}</span>
+                      <span>{userData?.level || "Level unavailable"}</span>
                       <span>·</span>
                       <span className="inline-flex items-center gap-1 text-[#0a0a0a] font-semibold">
                         <Sparkles className="w-3.5 h-3.5 text-[#0a0a0a]" />

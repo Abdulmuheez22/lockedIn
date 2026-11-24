@@ -1,9 +1,9 @@
 import { Router} from "express";
-import { verifyAccessToken } from "../utils/token.js";
+import { verifyJWT } from "../middleware/auth.middleware.js";
 import { fetchUserData } from "../controllers/memberdashboard.controller.js";
 
 const memberDashboardRouter = Router();
 
-memberDashboardRouter.get("/fetchUserData", verifyAccessToken, fetchUserData)
+memberDashboardRouter.get("/fetchUserData", verifyJWT, fetchUserData)
 
 export default memberDashboardRouter;

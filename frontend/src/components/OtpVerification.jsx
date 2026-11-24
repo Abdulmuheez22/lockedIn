@@ -166,7 +166,7 @@ export default function OtpVerification() {
     onSuccess: (data) => {
       console.log("Email verified Successfully:", data);
       setStatus("success");
-      setTimeout(() => navigate("/signin"), 1200);
+      setTimeout(() => navigate("/dashboard", { replace: true }), 1200);
     },
     onError: (error) => {
       console.error("OTP verification failed:", error);

@@ -111,10 +111,9 @@ export default function SignIn() {
   /* ------- API ------- */
   const { mutate } = useMutation({
     mutationFn: signIn,
-    onSuccess: (data) => {
-      console.log("Signed in:", data);
+    onSuccess: () => {
       setStatus("success");
-      /* navigate("/dashboard"); or wherever your app goes */
+      navigate("/dashboard", { replace: true });
     },
     onError: (error) => {
       setStatus("idle");
