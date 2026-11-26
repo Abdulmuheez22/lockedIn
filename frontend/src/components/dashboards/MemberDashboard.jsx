@@ -1,6 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { dpfRegistration, fetchUserData } from "../../services/api.services.js";
+import {
+  dpfRegistration,
+  fetchTodayDpfStatus,
+  fetchUserData,
+} from "../../services/api.services.js";
+import MemberAnalyticsDashboard from "./MemberAnalyticsDashboard.jsx";
 import PulseLoader from "../PulseLoader.jsx";
 import {
   Flame,
@@ -25,6 +30,11 @@ import {
   Check,
   Sparkles,
   ArrowRight,
+  Building2,
+  GraduationCap,
+  Mail,
+  Phone,
+  UserRound,
 } from "lucide-react";
 
 const REQUIRED_KEYS = [
@@ -155,7 +165,9 @@ function StreakHeader({ name, streak, progress }) {
               <Flame className="w-4 h-4 text-amber-500" fill="currentColor" />
             </motion.div>
             <span className="text-sm font-bold text-[#0a0a0a]">
-              {streak} Days
+              {streak === null
+                ? "—"
+                : `${streak} ${streak === 1 ? "Day" : "Days"}`}
             </span>
           </div>
           <ProgressRing progress={progress} />
@@ -422,7 +434,7 @@ function SuccessView({ streak, onReset }) {
         transition={{ delay: 0.35 }}
         className="text-2xl sm:text-3xl font-extrabold text-[#0a0a0a] tracking-tight"
       >
-        Day logged successfully
+        DPF Submitted Successfully
       </motion.h2>
 
       <motion.p
@@ -431,7 +443,8 @@ function SuccessView({ streak, onReset }) {
         transition={{ delay: 0.45 }}
         className="mt-2 text-[#737373] text-sm sm:text-base max-w-sm"
       >
-        Your daily performance record has been secured. Keep the momentum going.
+        Your Daily Performance Form for today has been recorded. Please return
+        tomorrow to complete your next entry.
       </motion.p>
 
       <motion.div
@@ -442,7 +455,7 @@ function SuccessView({ streak, onReset }) {
       >
         <Flame className="w-5 h-5 text-amber-500" fill="currentColor" />
         <span className="text-sm font-bold text-[#0a0a0a]">
-          {streak} Day Streak Active
+          {streak} {streak === 1 ? "Day" : "Days"} Streak Active
         </span>
       </motion.div>
 
@@ -454,10 +467,140 @@ function SuccessView({ streak, onReset }) {
         onClick={onReset}
         className="mt-10 inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-[#0a0a0a] text-white shadow-lg shadow-[#0a0a0a]/20 hover:bg-[#1f1f1f] transition"
       >
-        Log another record
+        Go to dashboard
         <ArrowRight className="w-4 h-4" />
       </motion.button>
     </motion.div>
+  );
+}
+
+function AlreadyLoggedTodayView() {
+  return (
+    <div
+      role="status"
+      className="min-h-[60vh] flex flex-col items-center justify-center px-4 py-12 text-center"
+    >
+      <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mb-5">
+        <CheckCircle2 className="w-9 h-9" />
+      </div>
+      <h2 className="text-xl sm:text-2xl font-bold text-[#0a0a0a] tracking-tight">
+        Today&apos;s DPF Has Been Submitted
+      </h2>
+      <p className="mt-2 text-[#737373] text-sm sm:text-base max-w-md">
+        Your Daily Performance Form for today has already been submitted.
+        Please return tomorrow to complete your next entry.
+      </p>
+    </div>
+  );
+}
+
+function MemberProfileSection({ userData, initials }) {
+  const upperRole = userData?.role?.charAt(0).toUpperCase() + userData?.role?.slice(1) || "Member";
+  const details = [
+    {
+      label: "Full name",
+      value: userData?.fullname,
+      icon: <UserRound className="h-5 w-5" />,
+    },
+    {
+      label: "Email address",
+      value: userData?.email,
+      icon: <Mail className="h-5 w-5" />,
+    },
+    {
+      label: "Department",
+      value: userData?.department,
+      icon: <Building2 className="h-5 w-5" />,
+    },
+    {
+      label: "Academic level",
+      value: userData?.level,
+      icon: <GraduationCap className="h-5 w-5" />,
+    },
+    {
+      label: "Phone number",
+      value: userData?.phoneNumber,
+      icon: <Phone className="h-5 w-5" />,
+    },
+    {
+      label: "Role",
+      value: userData?.role || "Member",
+      icon: <Users className="h-5 w-5" />,
+    },
+  ];
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mx-auto w-full max-w-5xl space-y-6"
+    >
+      <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#0a0a0a] via-[#171717] to-[#343434] p-6 text-white shadow-xl shadow-black/10 sm:p-9">
+        <div
+          aria-hidden="true"
+          className="absolute -right-12 -top-24 h-72 w-72 rounded-full border border-white/10"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute -right-2 -top-14 h-52 w-52 rounded-full border border-white/10"
+        />
+        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center">
+          {/* <div className="grid h-20 w-20 shrink-0 place-items-center rounded-3xl border border-white/15 bg-white/10 text-2xl font-bold tracking-wide shadow-inner">
+             {initials} 
+          </div> */}
+          <div className="min-w-0">
+            <p className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">
+              <UserRound className="h-4 w-4" />
+              Member profile
+            </p>
+            <h2 className="mt-1 break-words text-xl font-extrabold tracking-tight sm:text-3xl">
+              {userData?.fullname || "Member"}
+            </h2>
+            <p className="mt-1.5 text-sm text-white/70">
+              {userData?.role?.charAt(0).toUpperCase() + userData?.role?.slice(1) || "Member"} · Locked In Circle
+            </p>
+          </div>
+        </div>
+        <p className="relative mt-7 max-w-xl text-sm leading-6 text-white/65">
+          Your personal and academic details, all together in one place.
+        </p>
+      </div>
+
+      <section className="rounded-[2rem] border border-[#eaeaea] bg-white p-5 shadow-xs sm:p-8">
+        <div className="mb-6">
+          {/* <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#737373]">
+            Account information
+          </p> */}
+          <h3 className="mt-1 text-lg font-bold tracking-tight text-[#0a0a0a]">
+            Personal & academic details
+          </h3>
+          <p className="mt-1 text-sm text-[#737373]">
+            Information currently associated with your member account.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {details.map((detail) => (
+            <div
+              key={detail.label}
+              className="group flex min-h-20 min-w-0 items-center gap-4 rounded-2xl border border-[#f0f0f0] bg-[#fafafa] p-4 transition-colors hover:border-[#d4d4d4] hover:bg-white"
+            >
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white text-[#404040] shadow-sm transition-transform duration-200 group-hover:scale-110 group-hover:-rotate-3">
+                {detail.icon}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#737373]">
+                  {detail.label}
+                </p>
+                <p className="mt-1 break-words text-sm font-semibold text-[#0a0a0a]">
+                  {detail.value || "Not provided"}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </motion.section>
   );
 }
 
@@ -530,22 +673,6 @@ const MembersIcon = () => (
     <circle cx="9" cy="7" r="4" />
     <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
     <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-  </svg>
-);
-
-const SettingsIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1.13 1.57l-.46.25a2 2 0 0 1-2.86-.81L5 3.5a2 2 0 0 0-2.83 2.83l.81 1.09a2 2 0 0 1 .81 2.86l-.25.46a2 2 0 0 1-1.57 1.13H2a2 2 0 0 0-2 2v.44a2 2 0 0 0 2 2h.18a2 2 0 0 1 1.57 1.13l.25.46a2 2 0 0 1-.81 2.86l-.81 1.09a2 2 0 0 0 2.83 2.83l1.09-.81a2 2 0 0 1 2.86.81l.25.46a2 2 0 0 1 1.13 1.57V22a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1.13-1.57l.46-.25a2 2 0 0 1 2.86.81l1.09.81a2 2 0 0 0 2.83-2.83l-.81-1.09a2 2 0 0 1-.81-2.86l.25-.46a2 2 0 0 1 1.57-1.13H22a2 2 0 0 0 2-2v-.44a2 2 0 0 0-2-2h-.18a2 2 0 0 1-1.57-1.13l-.25-.46a2 2 0 0 1 .81-2.86l.81-1.09A2 2 0 0 0 21.5 3.5l-1.09.81a2 2 0 0 1-2.86-.81l-.25-.46A2 2 0 0 1 16.18 2H15a2 2 0 0 0-2 2z" />
-    <circle cx="12" cy="12" r="3" />
   </svg>
 );
 
@@ -685,11 +812,10 @@ export default function MemberDashboard() {
       icon: <DpfIcon />,
     },
     { id: "analytics", label: "Analytics", icon: <AnalyticsIcon /> },
+    { id: "upload materials", label: "Upload material", icon: <UploadIcon /> },
     { id: "tutorial", label: "Tutorial", icon: <BookOpen /> },
     { id: "notifications", label: "Notifications", icon: <BellIcon /> },
-    { id: "upload materials", label: "Upload material", icon: <UploadIcon /> },
-    { id: "members", label: "Circle Directory", icon: <MembersIcon /> },
-    { id: "settings", label: "Settings", icon: <SettingsIcon /> },
+    { id: "profile", label: "Profile", icon: <UserRound /> },
   ];
 
   const handleDpfSubmit = (e) => {
@@ -717,12 +843,44 @@ export default function MemberDashboard() {
     whatToImprove: "",
   });
 
-  const [streak, setStreak] = useState(7);
+  const [streak, setStreak] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [touched, setTouched] = useState({});
   const [missingField, setMissingField] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState("");
+  const [alreadyLoggedToday, setAlreadyLoggedToday] = useState(false);
+  const [isCheckingDpfStatus, setIsCheckingDpfStatus] = useState(false);
+
+  useEffect(() => {
+    if (activeNav !== "dpf") return;
+
+    let isMounted = true;
+
+    const checkDpfStatus = async () => {
+      try {
+        const status = await fetchTodayDpfStatus();
+        if (isMounted) {
+          setAlreadyLoggedToday(Boolean(status?.logged));
+          setStreak(Number.isInteger(status?.streak) ? status.streak : 0);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setSubmissionError(
+            error?.response?.data?.message ||
+              "Unable to check today's DPF submission status.",
+          );
+        }
+      } finally {
+        if (isMounted) setIsCheckingDpfStatus(false);
+      }
+    };
+
+    checkDpfStatus();
+    return () => {
+      isMounted = false;
+    };
+  }, [activeNav]);
 
   const update = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -742,7 +900,7 @@ export default function MemberDashboard() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
+    if (isSubmitting || alreadyLoggedToday || submitted) return;
 
     if (!isValid) {
       const firstMissing = REQUIRED_KEYS.find(
@@ -779,10 +937,16 @@ export default function MemberDashboard() {
 
     try {
       await dpfRegistration(payload);
-      setStreak((s) => s + 1);
+      setStreak((currentStreak) => (currentStreak ?? 0) + 1);
+      setAlreadyLoggedToday(true);
       setSubmitted(true);
     } catch (error) {
       console.error("DPF submission failed:", error);
+      if (error?.response?.status === 409) {
+        setAlreadyLoggedToday(true);
+        setSubmissionError("");
+        return;
+      }
       const message = error?.response?.data?.message;
       setSubmissionError(
         typeof message === "string"
@@ -812,6 +976,9 @@ export default function MemberDashboard() {
     setMissingField(null);
     setSubmissionError("");
     setSubmitted(false);
+    setActiveNav("overview");
+    setSidebarOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const minuteChips = [
@@ -908,7 +1075,7 @@ export default function MemberDashboard() {
     },
     { id: "Procrastination", label: "Procrastination", icon: Clock },
     { id: "Burnout", label: "Burnout", icon: BatteryLow },
-    { id: "Nothing", label: "Nothing", icon: CheckCircle2 },
+    { id: "Nothing", label: "None", icon: CheckCircle2 },
     {
       id: "unavailability of material",
       label: "Unavailability of material",
@@ -986,7 +1153,7 @@ export default function MemberDashboard() {
       >
         <div>
           {/* Brand Logo Header */}
-          <div className="p-6 border-b border-[#f0f0f0] flex items-center justify-between">
+          <div className="p-6 flex items-center justify-between">
             <div>
               <h2 className="text-[#0a0a0a] font-extrabold text-lg tracking-tight">
                 Locked In Circle
@@ -1011,6 +1178,10 @@ export default function MemberDashboard() {
                 <button
                   key={item.id}
                   onClick={() => {
+                    if (item.id === "dpf" && activeNav !== "dpf") {
+                      setIsCheckingDpfStatus(true);
+                      setSubmissionError("");
+                    }
                     setActiveNav(item.id);
                     setSidebarOpen(false);
                   }}
@@ -1022,11 +1193,15 @@ export default function MemberDashboard() {
                 >
                   <div className="flex items-center gap-3">
                     <span
-                      className={
+                      className={`inline-flex transition-transform duration-200 ease-out group-hover:scale-110 group-active:scale-95 ${
+                        item.id === "settings"
+                          ? "group-hover:rotate-12"
+                          : "group-hover:-translate-y-0.5"
+                      } ${
                         isActive
                           ? "text-white"
                           : "text-[#737373] group-hover:text-[#0a0a0a]"
-                      }
+                      }`}
                     >
                       {item.icon}
                     </span>
@@ -1055,16 +1230,19 @@ export default function MemberDashboard() {
               <p className="text-xs font-bold text-[#0a0a0a] truncate">
                 {displayName}
               </p>
-              <p className="text-[11px] text-[#737373] truncate">
+              {/* <p className="text-[11px] text-[#737373] truncate">
                 {userData?.role || "Member"}
               </p>
               {userData?.email && (
                 <p className="text-[10px] text-[#737373] truncate">
                   {userData.email}
-                </p>
-              )}
+                </p> */}
+              {/* )} */}
             </div>
           </div>
+            {/* <div className="p-4 border-t text-xs font-bold text-[#0a0a0a] truncate border-[#f0f0f0] m-3 rounded-2xl bg-[#fafafa]">
+              Sign out
+            </div> */}
         </div>
       </aside>
 
@@ -1076,10 +1254,12 @@ export default function MemberDashboard() {
             <h1 className="text-lg font-bold text-[#0a0a0a] tracking-tight capitalize">
               {activeNav === "dpf"
                 ? "Daily Performance Form (DPF)"
+                : activeNav === "profile"
+                  ? "Member Profile"
                 : `${activeNav} Dashboard`}
             </h1>
             <p className="text-xs text-[#737373] mt-0.5">
-              Welcome back, {displayName}. Here is your operational overview.
+              Hello, {displayName}.
             </p>
             {userData && (
               <p className="text-[11px] text-[#737373] mt-1">
@@ -1097,6 +1277,8 @@ export default function MemberDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <button
+              type="button"
+              onClick={() => setActiveNav("notifications")}
               aria-label="View notifications"
               className="p-2.5 rounded-xl border border-[#e5e5e5] text-[#737373] hover:text-[#0a0a0a] hover:bg-[#fafafa] transition-colors relative"
             >
@@ -1129,8 +1311,17 @@ export default function MemberDashboard() {
               />
 
               <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-8 py-8 pb-32">
-                {submitted ? (
+                {isCheckingDpfStatus ? (
+                  <p
+                    role="status"
+                    className="min-h-[60vh] flex items-center justify-center text-sm text-[#737373]"
+                  >
+                    Checking today&apos;s DPF submission status...
+                  </p>
+                ) : submitted ? (
                   <SuccessView streak={streak} onReset={resetForm} />
+                ) : alreadyLoggedToday ? (
+                  <AlreadyLoggedTodayView />
                 ) : (
                   <>
                     {/* User metadata badge */}
@@ -1467,6 +1658,61 @@ export default function MemberDashboard() {
                 )}
               </main>
             </div>
+          ) : activeNav === "upload materials" ? (
+            <section
+              role="status"
+              className="flex min-h-[50vh] flex-col items-center justify-center rounded-3xl border border-[#eaeaea] bg-white px-6 py-12 text-center shadow-xs"
+            >
+              <span className="grid h-16 w-16 place-items-center rounded-2xl bg-[#f5f5f5] text-[#0a0a0a]">
+                <UploadIcon />
+              </span>
+              <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#737373]">
+                Coming soon
+              </p>
+              <h2 className="mt-1 text-xl font-bold tracking-tight text-[#0a0a0a]">
+                Upload Materials
+              </h2>
+              <p className="mt-2 max-w-md text-sm text-[#737373]">
+                We&apos;re preparing this feature now. Please check back soon
+                for updates.
+              </p>
+            </section>
+          ) : activeNav === "notifications" ? (
+            <section
+              role="status"
+              className="flex min-h-[50vh] flex-col items-center justify-center rounded-3xl border border-[#eaeaea] bg-white px-6 py-12 text-center shadow-xs"
+            >
+              <span className="grid h-16 w-16 place-items-center rounded-2xl bg-[#f5f5f5] text-[#0a0a0a]">
+                <BellRing className="h-8 w-8" />
+              </span>
+              <h2 className="mt-5 text-xl font-bold tracking-tight text-[#0a0a0a]">
+                No Notifications Yet
+              </h2>
+              <p className="mt-2 max-w-md text-sm text-[#737373]">
+                You&apos;re all caught up. New updates and important notices
+                will appear here when they&apos;re available.
+              </p>
+            </section>
+          ) : activeNav === "profile" ? (
+            <MemberProfileSection userData={userData} initials={initials} />
+          ) : activeNav === "tutorial" ? (
+            <section
+              role="status"
+              className="flex min-h-[50vh] flex-col items-center justify-center rounded-3xl border border-[#eaeaea] bg-white px-6 py-12 text-center shadow-xs"
+            >
+              <span className="grid h-16 w-16 place-items-center rounded-2xl bg-[#f5f5f5] text-[#0a0a0a]">
+                <BookOpen className="h-8 w-8" />
+              </span>
+              <h2 className="mt-5 text-xl font-bold tracking-tight text-[#0a0a0a]">
+                No Upcoming Tutorials
+              </h2>
+              <p className="mt-2 max-w-md text-sm text-[#737373]">
+                There are currently no upcoming tutorials scheduled. Please
+                stay tuned for future updates.
+              </p>
+            </section>
+          ) : activeNav === "analytics" ? (
+            <MemberAnalyticsDashboard userData={userData} />
           ) : (
             /* ==================== OVERVIEW / DASHBOARD VIEW ==================== */
             <div className="space-y-6">

@@ -44,6 +44,16 @@ export const dpfRegistration = async (data) => {
   return res.data;
 }
 
+export const fetchTodayDpfStatus = async () => {
+  const res = await api.get("/dpf/today");
+  return res.data;
+}
+
+export const fetchDpfAnalytics = async () => {
+  const res = await api.get("/dpf/analytics");
+  return res.data;
+}
+
 export const fetchUserData = async () => {
   const res = await api.get("/dashboard/member/fetchUserData");
   return res.data;

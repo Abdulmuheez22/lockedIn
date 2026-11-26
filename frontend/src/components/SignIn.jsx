@@ -330,35 +330,13 @@ export default function SignIn() {
                 {/* ---------- Remember / forgot ---------- */}
                 <motion.div
                   variants={item}
-                  className="flex items-center justify-between mt-4 gap-2 flex-wrap"
+                  className="mt-3 flex items-end justify-end"
                 >
-                  <label className="flex items-center gap-2 text-[13px] text-[#737373] cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={remember}
-                      onChange={(e) => setRemember(e.target.checked)}
-                      className="hidden"
-                    />
-                    <span
-                      className={`w-[18px] h-[18px] rounded-[5px] border-[1.5px] grid place-items-center transition-all duration-200 ${
-                        remember
-                          ? "bg-[#0a0a0a] border-[#0a0a0a]"
-                          : "border-[#d4d4d4] bg-white"
-                      }`}
-                    >
-                      <motion.span
-                        animate={{ scale: remember ? 1 : 0, opacity: remember ? 1 : 0 }}
-                        transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                      >
-                        <CheckIcon />
-                      </motion.span>
-                    </span>
-                    Remember me
-                  </label>
+              
                   <button
                     type="button"
                     onClick={() => navigate("/forgot-password")}
-                    className="text-[13px] font-semibold text-[#0a0a0a] hover:text-[#737373] transition-colors"
+                    className=" cursor-pointer text-[13px] font-semibold text-[#0a0a0a] hover:text-[#737373] transition-colors"
                   >
                     Forgot password?
                   </button>
@@ -380,7 +358,7 @@ export default function SignIn() {
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 cursor-pointer"
                         >
                           <Spinner /> Signing in…
                         </motion.span>  
