@@ -15,6 +15,7 @@ isProd: process.env.NODE_ENV === "production",
  databaseUrl: process.env.DATABASE_URL,
  accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
  refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET,
+ cloudinaryUrl: process.env.CLOUDINARY_URL,
   cookie: {
     name: "token",
     base: { httpOnly: true, secure: isProd, sameSite: "lax", path: "/" },
